@@ -75,6 +75,7 @@ export const client = {
     resolveTitle: "Tag auflösen",
     resolveHint: "Automatisch jeden Abend um {hour}:00. Wenn alle festgelegt haben, kannst du früher auflösen.",
     resolveNow: "Jetzt auflösen", resolveAnyway: "Trotzdem jetzt auflösen",
+    resolveConfirm: "Tag {day} jetzt auflösen? Das lässt sich nicht rückgängig machen.", resolving: "Wird aufgelöst …",
     settings: "Einstellungen", botsLabel: "Fehlende Züge spielt ein Bot",
     saveSettings: "Einstellungen speichern",
     statusTitle: "Verbindungen",

@@ -31,7 +31,11 @@ function render() {
     <h2>${C.paperTitle}</h2>${d.papers.length ? `<p class="hint">${C.shareHint}</p>` : ""}
     ${d.papers.map((p, i) => `<button class="btn" data-share="${i}">${fmt(C.shareButton, { day: p.day })}</button><div class="paper">${esc(p.text)}</div>`).join("") || `<p class="hint">${C.noPaper}</p>`}`;
   $$("[data-copy]").forEach(b => b.addEventListener("click", () => { navigator.clipboard?.writeText(b.dataset.copy); b.textContent = C.copied; }));
-  $("#resolve").addEventListener("click", () => act("resolve", {}));
+  $("#resolve").addEventListener("click", e => {
+    if (!confirm(fmt(C.resolveConfirm, { day: d.day }))) return;
+    e.target.disabled = true; e.target.textContent = C.resolving;
+    act("resolve", {});
+  });
   $("#settings").addEventListener("click", () => act("settings", { bots: $("#bots").checked }));
   $$("[data-share]").forEach(b => b.addEventListener("click", async () => {
     b.disabled = true; b.textContent = C.sharing;
