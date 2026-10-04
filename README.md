@@ -19,6 +19,7 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 ```bash
 git clone <repo> fvz && cd fvz
 cp .env.example .env    # ADMIN_SECRET und BASE_URL setzen
+mkdir -p data && sudo chown 1000:1000 data   # das Spiel läuft im Container als Benutzer "node" (UID 1000)
 docker compose up -d --build
 ```
 
@@ -31,6 +32,8 @@ fvz.example.com {
 ```
 
 Die Datenbank liegt in `./data/fvz.sqlite`.
+
+**Bestehende Installation aktualisieren:** Früher lief der Container als root, die Dateien in `data/` gehören deshalb root. Einmalig vor dem Neustart: `sudo chown -R 1000:1000 data`, dann `docker compose up -d --build`.
 
 Auf dem Server außerdem:
 
@@ -46,7 +49,7 @@ Auf dem Server außerdem:
 1. `BASE_URL` öffnen, Admin-Passwort und die vier Namen eingeben.
 2. Du landest auf der Spielleitung. Den Admin-Link gut aufheben.
 3. Jedem Spieler nur seinen eigenen Link schicken.
-4. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
+4. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen. Wird ein Spiel ab 18:00 angelegt, läuft Tag 1 bis zum nächsten Abend.
 5. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
 
 ## Benachrichtigungen und Zeitung teilen

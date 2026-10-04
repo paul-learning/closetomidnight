@@ -2,7 +2,7 @@
 import { BALANCE } from "../rules/balance.ts";
 import { CRISES } from "../rules/content.ts";
 import { TRACKS } from "../rules/types.ts";
-import { accusation, cards, council, defections, drift, offers } from "./phases.ts";
+import { accusation, cards, council, councilCosts, defections, drift, offers } from "./phases.ts";
 import { rng } from "./rng.ts";
 import { finish } from "./scoring.ts";
 import { dealOffers } from "./setup.ts";
@@ -19,6 +19,7 @@ export function resolveDay(prev: GameState, moves: Move[]): GameState {
   defections(s, moves);
   council(s, moves, rep);
   cards(s, moves, rep);
+  councilCosts(s, rep);
   offers(s, moves, rep);
   accusation(s, moves, rep);
   drift(s, rnd);

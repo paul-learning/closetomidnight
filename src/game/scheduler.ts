@@ -11,7 +11,8 @@ async function tick() {
     try {
       if (now.hour >= CONFIG.resolveHour && g.lastResolved !== now.date) {
         await resolveGame(g.id);
-      } else if (now.hour >= CONFIG.remindHour && now.hour < CONFIG.resolveHour && g.lastReminded !== now.date) {
+      } else if (now.hour >= CONFIG.remindHour && now.hour < CONFIG.resolveHour && g.lastReminded !== now.date && g.lastResolved !== now.date) {
+        // Heute schon (früher) aufgelöst: der nächste Termin ist erst morgen, also keine Erinnerung
         store.setReminded(g.id, now.date);
         const moves = store.moves(g.id, g.state.day);
         const notLocked = [0, 1, 2, 3].filter(i => !moves[i]?.locked);

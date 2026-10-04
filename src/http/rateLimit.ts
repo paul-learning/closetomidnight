@@ -4,7 +4,8 @@ import { CONFIG } from "../config.ts";
 
 export function clientAddress(req: IncomingMessage): string {
   // Hinter Caddy steht die echte Adresse im Header; nur vertrauen, wenn ausdrücklich eingestellt.
-  const forwarded = CONFIG.trustProxy ? String(req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() : "";
+  // Der letzte Eintrag stammt vom eigenen Proxy; frühere kann der Besucher selbst mitschicken.
+  const forwarded = CONFIG.trustProxy ? String(req.headers["x-forwarded-for"] ?? "").split(",").at(-1)!.trim() : "";
   return forwarded || req.socket.remoteAddress || "unbekannt";
 }
 

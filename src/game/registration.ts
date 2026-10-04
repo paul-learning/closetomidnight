@@ -19,11 +19,14 @@ export function createGame(opts: { names: string[]; bots: boolean }): { adminKey
   const id = token(8), adminKey = token(12);
   const state = newGame(randomBytes(4).readUInt32LE());
   const now = localNow();
-  // Nach der Auflösungszeit angelegt: Tag 1 läuft bis morgen
-  store.insertGame({ id, adminKey, state, bots: opts.bots, lastResolved: now.hour >= CONFIG.resolveHour ? now.date : null });
-  state.players.forEach((p, idx) => store.insertPlayer({
-    token: token(12), gameId: id, idx, name: (opts.names[idx] ?? "").trim().slice(0, 40) || T.nations[p.nation].name,
-  }));
+  // Ab der Erinnerungszeit angelegt (zu wenig Zeit bis zur Auflösung): Tag 1 läuft bis morgen
+  const late = now.hour >= Math.min(CONFIG.remindHour, CONFIG.resolveHour);
+  store.transaction(() => {
+    store.insertGame({ id, adminKey, state, bots: opts.bots, lastResolved: late ? now.date : null });
+    state.players.forEach((p, idx) => store.insertPlayer({
+      token: token(12), gameId: id, idx, name: (opts.names[idx] ?? "").trim().slice(0, 40) || T.nations[p.nation].name,
+    }));
+  });
   return { adminKey };
 }
 

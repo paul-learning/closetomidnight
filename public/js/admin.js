@@ -31,7 +31,11 @@ function render() {
     <h2>${C.paperTitle}</h2>${d.papers.length ? `<p class="hint">${C.shareHint}</p>` : ""}
     ${d.papers.map((p, i) => `<button class="btn" data-share="${i}">${fmt(C.shareButton, { day: p.day })}</button><div class="paper">${esc(p.text)}</div>`).join("") || `<p class="hint">${C.noPaper}</p>`}`;
   $$("[data-copy]").forEach(b => b.addEventListener("click", () => { navigator.clipboard?.writeText(b.dataset.copy); b.textContent = C.copied; }));
-  $("#resolve").addEventListener("click", () => act("resolve", {}));
+  $("#resolve").addEventListener("click", e => {
+    if (!confirm(fmt(C.resolveConfirm, { day: d.day }))) return;
+    e.target.disabled = true; e.target.textContent = C.resolving;
+    act("resolve", {});
+  });
   $("#settings").addEventListener("click", () => act("settings", { bots: $("#bots").checked }));
   $$("[data-share]").forEach(b => b.addEventListener("click", async () => {
     b.disabled = true; b.textContent = C.sharing;
@@ -42,7 +46,7 @@ function render() {
   $("#names").addEventListener("click", () => act("settings", { names: d.players.map((_, i) => $(`[name=name${i}]`).value) }));
 }
 
-function describeTest(kind, t) {
+function describeTest(t) {
   if (t.ok) return `<span class="ok">${fmt(C.testAiOk, { sample: esc(t.sample) })}</span>`;
   const msg = t.reason === "noKey" ? C.testNoKey : fmt(C.testFailed, { detail: esc(t.detail ?? "") });
   return `<span class="err-text">${msg}</span>`;
@@ -50,7 +54,7 @@ function describeTest(kind, t) {
 
 async function runTest(kind, button) {
   button.disabled = true; button.textContent = C.testing;
-  try { const r = await api(`/api/a/${key}/test-${kind}`, {}); testResult[kind] = describeTest(kind, r.test); }
+  try { const r = await api(`/api/a/${key}/test-${kind}`, {}); testResult[kind] = describeTest(r.test); }
   catch (e) { testResult[kind] = `<span class="err-text">${esc(e.message)}</span>`; }
   render();
 }

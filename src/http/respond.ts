@@ -17,6 +17,7 @@ export const json = (res: ServerResponse, body: unknown, status = 200) => send(r
 export function readBody(req: IncomingMessage): Promise<any> {
   return new Promise((ok, fail) => {
     let d = "";
+    req.setEncoding("utf8"); // sonst zerreißen Umlaute an Chunk-Grenzen
     req.on("data", c => { d += c; if (d.length > 100_000) { req.destroy(); fail(new HttpError(413, T.errors.badRequest)); } });
     req.on("end", () => { try { ok(d ? JSON.parse(d) : {}); } catch { fail(new HttpError(400, T.errors.badRequest)); } });
   });

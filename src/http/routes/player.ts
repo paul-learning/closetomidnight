@@ -5,13 +5,14 @@ import { saveMove } from "../../game/service.ts";
 import { store } from "../../game/store.ts";
 import { playerView } from "../../game/view.ts";
 import { subscribe } from "../../game/notifications.ts";
+import { isPushEndpoint } from "../../integrations/push/send.ts";
 import { HttpError, json, readBody } from "../respond.ts";
 
 export async function playerRoute(req: IncomingMessage, res: ServerResponse, token: string, action?: string) {
   const pl = store.player(token); if (!pl) throw new HttpError(404, T.errors.badLink);
   if (req.method === "POST" && action === "push") {
     const b = await readBody(req);
-    const ok = typeof b.endpoint === "string" && b.endpoint.startsWith("https://") && typeof b.keys?.p256dh === "string" && typeof b.keys?.auth === "string";
+    const ok = typeof b.endpoint === "string" && isPushEndpoint(b.endpoint) && typeof b.keys?.p256dh === "string" && typeof b.keys?.auth === "string";
     if (!ok) throw new HttpError(400, T.errors.badRequest);
     return json(res, { result: await subscribe(pl.gameId, pl.idx, { endpoint: b.endpoint, p256dh: b.keys.p256dh, auth: b.keys.auth }) });
   }

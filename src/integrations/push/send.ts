@@ -16,6 +16,17 @@ export function loadVapidKeys(load: () => string | undefined, save: (json: strin
   return keys;
 }
 
+// Push-Dienste der Browser: Chrome/Android, Firefox, Safari/iPhone, Edge. Andere Adressen werden nicht angenommen,
+// damit niemand den Server Anfragen an beliebige Adressen schicken lassen kann.
+const PUSH_HOSTS = ["fcm.googleapis.com", "android.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com", ".notify.windows.com"];
+
+export function isPushEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    return url.protocol === "https:" && PUSH_HOSTS.some(h => h.startsWith(".") ? url.hostname.endsWith(h) : url.hostname === h);
+  } catch { return false; }
+}
+
 const contact = () => CONFIG.pushContact || (CONFIG.baseUrl.startsWith("https://") ? CONFIG.baseUrl : "mailto:spielleitung@localhost");
 
 export async function sendPush(sub: Subscription, msg: PushMessage, keys: VapidKeys): Promise<PushResult> {

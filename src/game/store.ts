@@ -10,7 +10,7 @@ export interface PushSub { endpoint: string; gameId: string; idx: number; p256dh
 
 const db = new DatabaseSync(CONFIG.dbPath);
 db.exec(`
-  CREATE TABLE IF NOT EXISTS games (id TEXT PRIMARY KEY, admin_key TEXT UNIQUE, state TEXT, chat_id TEXT, bots INTEGER DEFAULT 0,
+  CREATE TABLE IF NOT EXISTS games (id TEXT PRIMARY KEY, admin_key TEXT UNIQUE, state TEXT, bots INTEGER DEFAULT 0,
     last_resolved TEXT, last_reminded TEXT, created INTEGER);
   CREATE TABLE IF NOT EXISTS players (token TEXT PRIMARY KEY, game_id TEXT, idx INTEGER, name TEXT);
   CREATE TABLE IF NOT EXISTS moves (game_id TEXT, day INTEGER, idx INTEGER, move TEXT, locked INTEGER, PRIMARY KEY (game_id, day, idx));
@@ -18,6 +18,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, game_id TEXT, idx INTEGER, p256dh TEXT, auth TEXT, created INTEGER);
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 `);
+// Alte Datenbanken: ungenutzte Spalte aus einer früheren Version entfernen
+if ((db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "chat_id")) db.exec("ALTER TABLE games DROP COLUMN chat_id");
 
 const toGame = (r: any): GameRow | undefined => r && {
   id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded,
@@ -25,6 +27,11 @@ const toGame = (r: any): GameRow | undefined => r && {
 const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name };
 
 export const store = {
+  /** Führt fn ganz oder gar nicht aus. */
+  transaction<T>(fn: () => T): T {
+    db.exec("BEGIN");
+    try { const r = fn(); db.exec("COMMIT"); return r; } catch (e) { db.exec("ROLLBACK"); throw e; }
+  },
   insertGame(g: { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null }) {
     db.prepare("INSERT INTO games (id, admin_key, state, bots, last_resolved, created) VALUES (?, ?, ?, ?, ?, ?)")
       .run(g.id, g.adminKey, JSON.stringify(g.state), g.bots ? 1 : 0, g.lastResolved, Date.now());
@@ -34,7 +41,7 @@ export const store = {
   },
   game: (id: string) => toGame(db.prepare("SELECT * FROM games WHERE id = ?").get(id)),
   gameByAdminKey: (key: string) => toGame(db.prepare("SELECT * FROM games WHERE admin_key = ?").get(key)),
-  activeGames: () => (db.prepare("SELECT * FROM games").all().map(toGame) as GameRow[]).filter(g => !g.state.over),
+  activeGames: () => db.prepare("SELECT * FROM games WHERE json_extract(state, '$.over') = 0").all().map(toGame) as GameRow[],
   player: (token: string) => toPlayer(db.prepare("SELECT * FROM players WHERE token = ?").get(token)),
   players: (gameId: string) => db.prepare("SELECT * FROM players WHERE game_id = ? ORDER BY idx").all(gameId).map(toPlayer) as PlayerRow[],
   saveState(gameId: string, state: GameState, resolvedOn: string) {

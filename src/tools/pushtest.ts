@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createDecipheriv, createECDH, createHmac, createPublicKey, verify } from "node:crypto";
 import { b64u, encrypt, generateVapidKeys, unb64u } from "../integrations/push/crypto.ts";
-import { sendPush } from "../integrations/push/send.ts";
+import { isPushEndpoint, sendPush } from "../integrations/push/send.ts";
 
 test("Verschlüsselung entspricht RFC 8291, Anhang A", () => {
   const out = encrypt(unb64u("V2hlbiBJIGdyb3cgdXAsIEkgd2FudCB0byBiZSBhIHdhdGVybWVsb24"),
@@ -64,4 +64,11 @@ test("Abgelaufenes Abo wird als 'gone' erkannt", async () => {
       { title: "t", body: "b", url: "u" }, generateVapidKeys());
     assert.equal(r, "gone");
   } finally { server.close(); }
+});
+
+test("nur Adressen bekannter Push-Dienste werden angenommen", () => {
+  for (const ok of ["https://fcm.googleapis.com/fcm/send/abc", "https://updates.push.services.mozilla.com/wpush/v2/x",
+    "https://web.push.apple.com/QF8", "https://wns2-db5p.notify.windows.com/w/?token=x"]) assert.ok(isPushEndpoint(ok), ok);
+  for (const bad of ["http://fcm.googleapis.com/x", "https://example.org/x", "https://fcm.googleapis.com.evil.org/x",
+    "https://evilnotify.windows.com/x", "kein url"]) assert.ok(!isPushEndpoint(bad), bad);
 });

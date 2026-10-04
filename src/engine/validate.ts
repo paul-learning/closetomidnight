@@ -1,5 +1,5 @@
 // Prüft einen eingereichten Zug gegen die Regeln. Fehler tragen einen Code; den Text liefert src/i18n.
-import { canDefect, canVeto, offerFor } from "./state.ts";
+import { canDefect, canVeto, cardCost, offerFor } from "./state.ts";
 import type { GameState, Move } from "./state.ts";
 
 export type RuleErrorCode = "gameOver" | "needTarget" | "cannotDefect" | "tooExpensive";
@@ -16,6 +16,7 @@ export function validateMove(s: GameState, i: number, input: any): Move {
   if (typeof m.vote === "string" && s.crisis.responses.some(r => r.id === m.vote)) out.vote = m.vote;
   const card = typeof m.cardId === "string" ? p.hand.find(c => c.id === m.cardId) : undefined;
   if (card) {
+    if (cardCost(p, card) > p.pk) throw new RuleError("tooExpensive");
     out.cardId = card.id;
     if (card.steal || card.leak) {
       const t = Number(m.target);

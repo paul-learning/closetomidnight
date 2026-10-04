@@ -51,3 +51,30 @@ test("Bericht nennt ein Ziel nur bei Interaktionskarten", () => {
   const next = resolveDay(s, s.players.map((_, i) => i === 0 ? { vote: null, cardId: "gipfel", target: 2 } : { vote: null, cardId: null }));
   assert.equal(next.history[0].cards[0].target, undefined);
 });
+
+test("Karte scheitert nicht an den Kosten des Ratsbeschlusses", () => {
+  const s = newGame(9);
+  s.players.forEach(p => { p.pk = 3; });
+  s.players[0].hand = [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }];
+  const strong = s.crisis.responses[0].id; // alle stimmen für die teuerste Option
+  const next = resolveDay(s, s.players.map((_, i) => ({ vote: strong, cardId: i === 0 ? "gipfel" : null })));
+  assert.equal(next.history[0].passed, strong);
+  assert.ok(next.history[0].cards.some(c => c.card === "gipfel"));
+});
+
+test("Diebstahl verhindert keine fremde Karte", () => {
+  const s = newGame(11);
+  s.players.forEach(p => { p.pk = 2; });
+  s.players[0].hand = [{ id: "erpressung", kind: "interaktion", cost: 0, steal: 2 }];
+  s.players[1].hand = [{ id: "faktencheck", kind: "sauber", cost: 2, vp: 1, tracks: { kollaps: -1 } }];
+  const next = resolveDay(s, s.players.map((_, i) => i === 0 ? { vote: null, cardId: "erpressung", target: 1 }
+    : i === 1 ? { vote: null, cardId: "faktencheck" } : { vote: null, cardId: null }));
+  assert.deepEqual(next.history[0].cards.map(c => c.card), ["erpressung", "faktencheck"]);
+});
+
+test("zu teure Karte wird beim Speichern abgelehnt", () => {
+  const s = newGame(13);
+  s.players[0].pk = 1;
+  s.players[0].hand = [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }];
+  assert.throws(() => validateMove(s, 0, { cardId: "gipfel" }), (e: unknown) => e instanceof RuleError && e.code === "tooExpensive");
+});
