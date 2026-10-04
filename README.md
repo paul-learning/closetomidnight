@@ -46,7 +46,7 @@ Auf dem Server außerdem:
 1. `BASE_URL` öffnen, Admin-Passwort und die vier Namen eingeben.
 2. Du landest auf der Spielleitung. Den Admin-Link gut aufheben.
 3. Jedem Spieler nur seinen eigenen Link schicken.
-4. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
+4. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen. Wird ein Spiel ab 18:00 angelegt, läuft Tag 1 bis zum nächsten Abend.
 5. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
 
 ## Benachrichtigungen und Zeitung teilen
