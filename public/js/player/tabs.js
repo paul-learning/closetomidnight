@@ -19,8 +19,8 @@ export function paperTab(d) {
 }
 
 export function allianceTab(d) {
-  return `<table class="table">${d.players.map(p => `<tr><td><b>${nation(p.nation)}</b> · ${esc(p.playerName)}${p.idx === d.me.idx ? ` ${C.you}` : ""}<br>
-    <span class="hint">${p.pk} ${C.influence}</span></td><td class="${p.locked ? "ok" : ""}">${d.over ? "" : p.locked ? C.isLocked : C.isThinking}</td></tr>`).join("")}</table>
+  return `<table class="table">${d.players.map(p => `<tr><td><b>${nation(p.nation)}</b> · ${esc(p.playerName)}${p.idx === d.me.idx ? ` ${C.you}` : ""}
+    ${p.pk !== undefined ? `<br><span class="hint">${p.pk} ${C.influence}</span>` : ""}</td><td class="${p.locked ? "ok" : ""}">${d.over ? "" : p.locked ? C.isLocked : C.isThinking}</td></tr>`).join("")}</table>
     <p class="hint">${C.secretPoints}</p>`;
 }
 
