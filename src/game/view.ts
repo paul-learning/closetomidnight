@@ -36,8 +36,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
     offer: s.over ? null : offerFor(s, i),
     accusationUsed: s.accusationUsed,
     players: s.players.map((q, j) => ({
-      idx: j, nation: q.nation, playerName: players[j].name, locked: !!moves[j]?.locked,
-      ...(j === i || s.over ? { pk: q.pk } : {}), // fremder Einfluss würde Angebote und Überlaufen verraten
+      idx: j, nation: q.nation, playerName: players[j].name, pk: q.pk, locked: !!moves[j]?.locked,
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),
     papers,

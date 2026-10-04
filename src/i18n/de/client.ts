@@ -49,7 +49,7 @@ export const client = {
     firstPaper: "Die erste Ausgabe erscheint heute um {hour}:00.",
     you: "(du)",
     isLocked: "festgelegt", isThinking: "überlegt noch",
-    secretPoints: "Einfluss und Siegpunkte der anderen sind geheim, bis das Spiel endet.",
+    secretPoints: "Siegpunkte der anderen sind geheim, bis das Spiel endet.",
     wonBy: "Gewonnen: {names}", nobodyWon: "Niemand hat gewonnen.",
     filesOpened: "Die Akten werden geöffnet",
     defector: "Überläufer",
