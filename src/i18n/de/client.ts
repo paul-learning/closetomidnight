@@ -42,7 +42,7 @@ export const client = {
     sumAgainst: "{card} gegen {target}",
     sumAccepted: "{power} angenommen", sumDeclined: "Abgelehnt", sumNothing: "Nichts Besonderes",
     sumVeto: "Veto einlegen", sumDefect: "Überlaufen",
-    sumPk: "Nach deinen Zügen hast du voraussichtlich {pk} Einfluss. Wird ein Ratsbeschluss gefasst, zahlst du zusätzlich dessen Kosten.",
+    sumPk: "Nach deinen Zügen hast du voraussichtlich {pk} Einfluss. Wird ein Ratsbeschluss gefasst, zahlst du zusätzlich dessen Kosten – fehlt dir Einfluss, kostet es Siegpunkte.",
     lockedTitle: "Dein Zug ist festgelegt",
     lockedHint: "Aufgelöst wird um {hour}:00. Bis dahin kannst du ihn ändern.",
     stepOf: "{n} / {total}",
