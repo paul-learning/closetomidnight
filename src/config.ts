@@ -1,5 +1,6 @@
 // Einstellungen und Zugangsdaten. Nur hier wird process.env gelesen. Vorlage: .env.example
-const env = process.env;
+// Leere Werte (z. B. "RESOLVE_HOUR=") gelten als nicht gesetzt, damit die Standardwerte greifen.
+const env: Record<string, string | undefined> = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== ""));
 
 export const CONFIG = Object.freeze({
   port: Number(env.PORT ?? 8080),
