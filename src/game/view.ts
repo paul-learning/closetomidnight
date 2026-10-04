@@ -9,7 +9,6 @@ import type { PlayerRow, SavedMove } from "./store.ts";
 import { playerUrl } from "./registration.ts";
 import { aiConfigured } from "../integrations/mistral.ts";
 import { subscriberCount, vapidPublicKey } from "./notifications.ts";
-import { clockTime as clockOf } from "../engine/index.ts";
 
 const goalInfo = (ids: string[]) => ids.map(id => { const g = GOALS.find(x => x.id === id)!; return { id, kind: g.kind, vp: g.vp }; });
 
@@ -50,7 +49,7 @@ export function adminView(s: GameState, game: { id: string; bots: boolean }, pla
     day: s.day, days: BALANCE.days, over: s.over, bots: game.bots, resolveHour: CONFIG.resolveHour,
     status: { ai: aiConfigured(), aiModel: aiConfigured() ? CONFIG.mistral.model : null, pushPlayers: subscriberCount(game.id) },
     players: players.map((pl, i) => ({ name: pl.name, nation: s.players[i].nation, url: playerUrl(pl.token), saved: !!moves[i], locked: !!moves[i]?.locked })),
-    papers: papers.map(p => ({ ...p, clock: clockOf(s.history.find(h => h.day === p.day)?.tracksAfter ?? s.tracks),
+    papers: papers.map(p => ({ ...p, clock: clockTime(s.history.find(h => h.day === p.day)?.tracksAfter ?? s.tracks),
       midnight: s.over && s.ending !== "vernunft" && p.day === s.history.at(-1)?.day })),
   };
 }

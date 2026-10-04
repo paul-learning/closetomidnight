@@ -46,7 +46,7 @@ function render() {
   $("#names").addEventListener("click", () => act("settings", { names: d.players.map((_, i) => $(`[name=name${i}]`).value) }));
 }
 
-function describeTest(kind, t) {
+function describeTest(t) {
   if (t.ok) return `<span class="ok">${fmt(C.testAiOk, { sample: esc(t.sample) })}</span>`;
   const msg = t.reason === "noKey" ? C.testNoKey : fmt(C.testFailed, { detail: esc(t.detail ?? "") });
   return `<span class="err-text">${msg}</span>`;
@@ -54,7 +54,7 @@ function describeTest(kind, t) {
 
 async function runTest(kind, button) {
   button.disabled = true; button.textContent = C.testing;
-  try { const r = await api(`/api/a/${key}/test-${kind}`, {}); testResult[kind] = describeTest(kind, r.test); }
+  try { const r = await api(`/api/a/${key}/test-${kind}`, {}); testResult[kind] = describeTest(r.test); }
   catch (e) { testResult[kind] = `<span class="err-text">${esc(e.message)}</span>`; }
   render();
 }
