@@ -32,7 +32,6 @@ export function council(s: GameState, moves: Move[], rep: DayReport) {
   let hit = s.crisis.severity;
   if (passed) {
     const p0 = passed;
-    s.players.forEach(p => pay(p, p0.costEach));
     hit -= p0.reduce;
     if (p0.bonus) s.players.find(p => p.nation === p0.bonus!.nation)!.vp += p0.bonus.vp;
     moves.forEach((m, i) => { if (m.vote === p0.id) { s.players[i].stats.majorityVotes++; s.players[i].stats.saved += p0.reduce / 2; } });
@@ -41,17 +40,24 @@ export function council(s: GameState, moves: Move[], rep: DayReport) {
   bump(s, s.crisis.track, Math.max(0, hit));
 }
 
-/** 2. Nationale Aktionen: jede Nation spielt höchstens eine Karte. */
+/** 2. Nationale Aktionen: jede Nation spielt höchstens eine Karte.
+ *  Erst zahlen alle ihre Karten, dann wirken sie – so kann ein Diebstahl keine fremde Karte mehr verhindern. */
 export function cards(s: GameState, moves: Move[], rep: DayReport) {
-  moves.forEach((m, i) => {
-    const p = s.players[i]; if (!m.cardId) return;
-    const idx = p.hand.findIndex(c => c.id === m.cardId); if (idx < 0) return;
-    const c = p.hand[idx]; const cost = cardCost(p, c); if (p.pk < cost) return;
+  const played = moves.map((m, i) => {
+    const p = s.players[i]; if (!m.cardId) return null;
+    const idx = p.hand.findIndex(c => c.id === m.cardId); if (idx < 0) return null;
+    const c = p.hand[idx]; const cost = cardCost(p, c); if (p.pk < cost) return null;
     const target = m.target !== undefined && m.target !== i && m.target >= 0 && m.target < 4 ? s.players[m.target] : undefined;
     const interactive = !!(c.steal || c.leak);
-    if (interactive && !target) return;
+    if (interactive && !target) return null;
+    p.hand.splice(idx, 1); p.pk -= cost;
+    return { p, c, target, interactive };
+  });
 
-    p.hand.splice(idx, 1); p.pk -= cost; p.vp += c.vp ?? 0; p.pk += c.pk ?? 0;
+  for (const play of played) {
+    if (!play) continue;
+    const { p, c, target, interactive } = play;
+    p.vp += c.vp ?? 0; p.pk += c.pk ?? 0;
     for (const t of TRACKS) {
       const d = c.tracks?.[t]; if (!d) continue;
       bump(s, t, d); if (d < 0) p.stats.saved -= d; else p.stats.caused += d;
@@ -64,7 +70,13 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
       if (goal) p.intel.push({ nation: target.nation, goal });
     }
     rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined });
-  });
+  }
+}
+
+/** 2b. Kosten des Ratsbeschlusses: erst nach den Karten, damit eine festgelegte Karte nie am Beschluss scheitert. */
+export function councilCosts(s: GameState, rep: DayReport) {
+  const passed = s.crisis.responses.find(r => r.id === rep.passed);
+  if (passed) s.players.forEach(p => pay(p, passed.costEach));
 }
 
 /** 3. Angebote der Großmächte: öffentlich wird nur, wer gekauft hat, nicht wen. */
