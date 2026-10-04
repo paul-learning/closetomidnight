@@ -73,16 +73,33 @@ function awaitingTarget(d, draft) {
   return !!card && !!(card.steal || card.leak) && draft.target === undefined;
 }
 
+// Immer nur ein Speichervorgang gleichzeitig; Änderungen währenddessen werden danach mit dem neuesten Entwurf gesendet.
+// Sonst könnte eine langsame ältere Antwort die letzte Wahl überschreiben.
+let saving = false, queued = null; // queued: { lock } für den nächsten Durchgang
+
 async function save(lock) {
-  ui.error = "";
-  if (!lock && awaitingTarget(ui.data, ui.draft)) return render();
+  if (!lock && awaitingTarget(ui.data, ui.draft)) { ui.error = ""; return render(); }
+  if (saving) { queued = { lock: !!queued?.lock || lock }; return; }
+  saving = true;
   try {
-    const { _editing, ...move } = ui.draft;
-    ui.data = await api(`/api/p/${ui.key}/move`, { move, lock });
-    // Entwurf an das anpassen, was der Server tatsächlich gespeichert hat (z. B. nach einem Tageswechsel)
-    ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : _editing };
-    if (lock) ui.step = 0;
-  } catch (e) { ui.error = e.message; }
+    for (;;) {
+      ui.error = "";
+      const { _editing, ...move } = ui.draft;
+      const sent = JSON.stringify(move);
+      try {
+        ui.data = await api(`/api/p/${ui.key}/move`, { move, lock });
+        const { _editing: editing, ...current } = ui.draft;
+        // Den gespeicherten Stand (z. B. nach einem Tageswechsel bereinigt) nur übernehmen, wenn sich nichts mehr geändert hat
+        if (!queued && JSON.stringify(current) === sent) {
+          ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : editing };
+          if (lock) ui.step = 0;
+        }
+      } catch (e) { ui.error = e.message; }
+      if (!queued) break;
+      lock = queued.lock; queued = null;
+      if (!lock && awaitingTarget(ui.data, ui.draft)) break;
+    }
+  } finally { saving = false; }
   render();
 }
 
