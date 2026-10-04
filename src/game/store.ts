@@ -1,0 +1,64 @@
+// Speicherung in SQLite. Nur hier steht SQL.
+import { DatabaseSync } from "node:sqlite";
+import { CONFIG } from "../config.ts";
+import type { GameState, Move } from "../engine/index.ts";
+
+export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null }
+export interface PlayerRow { token: string; gameId: string; idx: number; name: string }
+export interface SavedMove { move: Move; locked: boolean }
+export interface PushSub { endpoint: string; gameId: string; idx: number; p256dh: string; auth: string }
+
+const db = new DatabaseSync(CONFIG.dbPath);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS games (id TEXT PRIMARY KEY, admin_key TEXT UNIQUE, state TEXT, chat_id TEXT, bots INTEGER DEFAULT 0,
+    last_resolved TEXT, last_reminded TEXT, created INTEGER);
+  CREATE TABLE IF NOT EXISTS players (token TEXT PRIMARY KEY, game_id TEXT, idx INTEGER, name TEXT);
+  CREATE TABLE IF NOT EXISTS moves (game_id TEXT, day INTEGER, idx INTEGER, move TEXT, locked INTEGER, PRIMARY KEY (game_id, day, idx));
+  CREATE TABLE IF NOT EXISTS papers (game_id TEXT, day INTEGER, text TEXT, PRIMARY KEY (game_id, day));
+  CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, game_id TEXT, idx INTEGER, p256dh TEXT, auth TEXT, created INTEGER);
+  CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+`);
+
+const toGame = (r: any): GameRow | undefined => r && {
+  id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded,
+};
+const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name };
+
+export const store = {
+  insertGame(g: { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null }) {
+    db.prepare("INSERT INTO games (id, admin_key, state, bots, last_resolved, created) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(g.id, g.adminKey, JSON.stringify(g.state), g.bots ? 1 : 0, g.lastResolved, Date.now());
+  },
+  insertPlayer(p: PlayerRow) {
+    db.prepare("INSERT INTO players (token, game_id, idx, name) VALUES (?, ?, ?, ?)").run(p.token, p.gameId, p.idx, p.name);
+  },
+  game: (id: string) => toGame(db.prepare("SELECT * FROM games WHERE id = ?").get(id)),
+  gameByAdminKey: (key: string) => toGame(db.prepare("SELECT * FROM games WHERE admin_key = ?").get(key)),
+  activeGames: () => (db.prepare("SELECT * FROM games").all().map(toGame) as GameRow[]).filter(g => !g.state.over),
+  player: (token: string) => toPlayer(db.prepare("SELECT * FROM players WHERE token = ?").get(token)),
+  players: (gameId: string) => db.prepare("SELECT * FROM players WHERE game_id = ? ORDER BY idx").all(gameId).map(toPlayer) as PlayerRow[],
+  saveState(gameId: string, state: GameState, resolvedOn: string) {
+    db.prepare("UPDATE games SET state = ?, last_resolved = ? WHERE id = ?").run(JSON.stringify(state), resolvedOn, gameId);
+  },
+  setReminded: (gameId: string, date: string) => db.prepare("UPDATE games SET last_reminded = ? WHERE id = ?").run(date, gameId),
+  setBots: (gameId: string, on: boolean) => db.prepare("UPDATE games SET bots = ? WHERE id = ?").run(on ? 1 : 0, gameId),
+  renamePlayer: (gameId: string, idx: number, name: string) => db.prepare("UPDATE players SET name = ? WHERE game_id = ? AND idx = ?").run(name, gameId, idx),
+  moves(gameId: string, day: number): (SavedMove | null)[] {
+    const rows = db.prepare("SELECT idx, move, locked FROM moves WHERE game_id = ? AND day = ?").all(gameId, day) as { idx: number; move: string; locked: number }[];
+    return [0, 1, 2, 3].map(i => { const r = rows.find(x => x.idx === i); return r ? { move: JSON.parse(r.move), locked: !!r.locked } : null; });
+  },
+  saveMove(gameId: string, day: number, idx: number, move: Move, locked: boolean) {
+    db.prepare("INSERT OR REPLACE INTO moves (game_id, day, idx, move, locked) VALUES (?, ?, ?, ?, ?)").run(gameId, day, idx, JSON.stringify(move), locked ? 1 : 0);
+  },
+  papers: (gameId: string) => db.prepare("SELECT day, text FROM papers WHERE game_id = ? ORDER BY day DESC").all(gameId) as { day: number; text: string }[],
+  savePaper: (gameId: string, day: number, text: string) => db.prepare("INSERT OR REPLACE INTO papers (game_id, day, text) VALUES (?, ?, ?)").run(gameId, day, text),
+  // ---- Push-Abos ----
+  savePushSub: (p: PushSub) => db.prepare("INSERT OR REPLACE INTO push_subs (endpoint, game_id, idx, p256dh, auth, created) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(p.endpoint, p.gameId, p.idx, p.p256dh, p.auth, Date.now()),
+  deletePushSub: (endpoint: string) => db.prepare("DELETE FROM push_subs WHERE endpoint = ?").run(endpoint),
+  pushSubs: (gameId: string) => (db.prepare("SELECT * FROM push_subs WHERE game_id = ?").all(gameId) as any[])
+    .map(r => ({ endpoint: r.endpoint, gameId: r.game_id, idx: r.idx, p256dh: r.p256dh, auth: r.auth }) as PushSub),
+  // ---- Server-Einstellungen (z. B. VAPID-Schlüssel) ----
+  setting: (key: string) => (db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined)?.value,
+  setSetting: (key: string, value: string) => db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, value),
+};

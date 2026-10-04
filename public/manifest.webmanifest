@@ -1,0 +1,11 @@
+{
+  "name": "Fünf vor Zwölf",
+  "short_name": "5 vor 12",
+  "display": "standalone",
+  "background_color": "#1f2b2c",
+  "theme_color": "#1f2b2c",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
