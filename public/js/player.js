@@ -67,12 +67,21 @@ function bind(d, locked) {
 }
 
 
+/** Interaktionskarte gewählt, aber noch kein Ziel: der Zug ist noch nicht speicherbar. */
+function awaitingTarget(d, draft) {
+  const card = d.me.hand.find(c => c.id === draft.cardId);
+  return !!card && !!(card.steal || card.leak) && draft.target === undefined;
+}
+
 async function save(lock) {
   ui.error = "";
+  if (!lock && awaitingTarget(ui.data, ui.draft)) return render();
   try {
     const { _editing, ...move } = ui.draft;
     ui.data = await api(`/api/p/${ui.key}/move`, { move, lock });
-    if (lock) { ui.draft._editing = false; ui.step = 0; }
+    // Entwurf an das anpassen, was der Server tatsächlich gespeichert hat (z. B. nach einem Tageswechsel)
+    ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : _editing };
+    if (lock) ui.step = 0;
   } catch (e) { ui.error = e.message; }
   render();
 }
