@@ -19,6 +19,7 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 ```bash
 git clone <repo> fvz && cd fvz
 cp .env.example .env    # ADMIN_SECRET und BASE_URL setzen
+mkdir -p data && sudo chown 1000:1000 data   # das Spiel läuft im Container als Benutzer "node" (UID 1000)
 docker compose up -d --build
 ```
 
@@ -31,6 +32,8 @@ fvz.example.com {
 ```
 
 Die Datenbank liegt in `./data/fvz.sqlite`.
+
+**Bestehende Installation aktualisieren:** Früher lief der Container als root, die Dateien in `data/` gehören deshalb root. Einmalig vor dem Neustart: `sudo chown -R 1000:1000 data`, dann `docker compose up -d --build`.
 
 Auf dem Server außerdem:
 
