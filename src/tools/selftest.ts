@@ -300,7 +300,7 @@ test("Ratskosten nicht bezahlbar: Siegpunkte weg, nur der Betroffene erfährt es
   const opt = s.crisis.responses.filter(r => !r.unanimous && r.costEach > 0)[0] ?? s.crisis.responses.find(r => r.costEach > 0)!;
   s.players[0].pk = 0; s.players[0].vp = 5;
   s.players[0].hand = [{ id: "notstand", kind: "schmutzig", cost: 0, vp: 2, pk: 2, tracks: { autokratie: 1 } }];
-  assert.equal(pkAfterCard(s, 0, { vote: null, cardId: "notstand" }), 2, "Karte bringt Einfluss");
+  assert.equal(pkAfterCard(s, 0, { vote: null, cardId: "notstand" }), 0, "Einfluss-Gewinn der Karte zählt nicht (Blockade möglich)");
   const votes = s.players.map(() => ({ vote: opt.id, cardId: null }));
   const next = resolveDay(s, votes);
   assert.equal(next.history.at(-1)!.passed, opt.id);
