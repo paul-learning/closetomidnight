@@ -33,7 +33,7 @@ export const STEPS = {
     const o = d.offer;
     return `<p class="hint">${C.phoneHint}</p>
       <div class="phone"><div class="from">${powerName(o.power)}</div><q>${T.offers[o.id]}</q><div class="d">${offerEffects(o)}</div>
-      <label class="switch" style="margin-top:12px"><input type="checkbox" name="acceptOffer" ${m.acceptOffer ? "checked" : ""} ${dis}> ${C.acceptOffer}</label></div>`;
+      <label class="switch spaced"><input type="checkbox" name="acceptOffer" ${m.acceptOffer ? "checked" : ""} ${dis}> ${C.acceptOffer}</label></div>`;
   },
   akte(d, m, dis) {
     const me = d.me, others = d.players.filter(p => p.idx !== me.idx);

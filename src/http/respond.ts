@@ -1,6 +1,7 @@
 // Antworten senden, Anfragen lesen, HTTP-Fehler.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { T } from "../i18n/index.ts";
+import { securityHeaders } from "./securityHeaders.ts";
 
 export class HttpError extends Error {
   status: number;
@@ -8,7 +9,7 @@ export class HttpError extends Error {
 }
 
 export function send(res: ServerResponse, status: number, body: string, type = "application/json", extraHeaders: Record<string, string> = {}) {
-  res.writeHead(status, { "Content-Type": `${type}; charset=utf-8`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extraHeaders });
+  res.writeHead(status, { ...securityHeaders(), "Content-Type": `${type}; charset=utf-8`, "Cache-Control": "no-store", ...extraHeaders });
   res.end(body);
 }
 

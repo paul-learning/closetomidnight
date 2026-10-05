@@ -60,3 +60,18 @@ test("nach dem Abmelden gilt das Cookie auch für Spielseiten nicht mehr", async
   assert.equal((await post("/api/admin/logout", {}, c)).status, 200);
   assert.equal((await get(`/api/a/${adminKey}`, c)).status, 401);
 });
+
+test("Sicherheits-Kopfzeilen auf Seiten, Dateien, Bildern und API", async () => {
+  for (const path of ["/", "/admin", "/js/main.js", "/strings.js", "/icons/icon-192.png", "/api/lobby", "/api/gibtsnicht"]) {
+    const h = (await get(path)).headers;
+    const csp = h.get("content-security-policy") ?? "";
+    assert.match(csp, /script-src 'self'(;|$)/, `${path}: nur eigene Skripte`);
+    assert.match(csp, /frame-ancestors 'none'/, `${path}: nicht einbettbar`);
+    assert.ok(!/unsafe-inline|unsafe-eval/.test(csp), `${path}: keine Ausnahmen für Inline-Code`);
+    assert.equal(h.get("referrer-policy"), "no-referrer", path);
+    assert.equal(h.get("x-content-type-options"), "nosniff", path);
+    assert.equal(h.get("x-frame-options"), "DENY", path);
+    assert.ok(h.get("permissions-policy")?.includes("camera=()"), path);
+    assert.equal(h.get("strict-transport-security"), null, `${path}: ohne HTTPS kein HSTS`);
+  }
+});
