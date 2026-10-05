@@ -28,5 +28,5 @@ export function failureLimiter(maxFailures: number, windowMs: number) {
   };
 }
 
-/** Gemeinsam für alle Passwörter (Anmeldung, Admin-Passwort beim Anlegen): 10 Fehlversuche je Adresse in 15 Minuten. */
+/** Gemeinsam für alle Anmeldungen (Spieler und Spielleitung): 10 Fehlversuche je Adresse in 15 Minuten. */
 export const passwordAttempts = failureLimiter(10, 15 * 60_000);

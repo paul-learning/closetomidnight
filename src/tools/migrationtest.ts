@@ -34,15 +34,22 @@ const OLD_SCHEMAS: Record<string, string> = {
     INSERT INTO admin_sessions VALUES ('alt', ${Date.now() + 86_400_000});`,
 };
 
+function withDb<T>(path: string, fn: (db: DatabaseSync) => T): T {
+  const db = new DatabaseSync(path);
+  try { return fn(db); } finally { db.close(); }
+}
+
 for (const [name, sql] of Object.entries(OLD_SCHEMAS)) {
   test(`alte Datenbank startet: ${name}`, () => {
     const dir = mkdtempSync(join(tmpdir(), "fvz-mig-"));
     try {
       const path = join(dir, "fvz.sqlite");
-      new DatabaseSync(path).exec(sql);
+      // Jede Verbindung wieder schließen, auch wenn etwas schiefgeht: Unter Windows lässt sich die Datei sonst
+      // nicht löschen, und der EPERM-Fehler beim Aufräumen verdeckt den eigentlichen Fehler.
+      withDb(path, db => db.exec(sql));
       assert.doesNotThrow(() => openWithCurrentCode(path));
       if (name.startsWith("admin_sessions")) {
-        const row = new DatabaseSync(path).prepare("SELECT secret_fp FROM admin_sessions WHERE token_hash = 'alt'").get();
+        const row = withDb(path, db => db.prepare("SELECT secret_fp FROM admin_sessions WHERE token_hash = 'alt'").get());
         assert.equal(row, undefined, "alte Anmeldung ohne Fingerabdruck wird beim nächsten Anmelden entfernt");
       }
     } finally { rmSync(dir, { recursive: true, force: true }); }
