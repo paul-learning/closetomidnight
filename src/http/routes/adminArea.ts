@@ -22,6 +22,8 @@ function gameList() {
 export async function adminAreaRoute(req: IncomingMessage, res: ServerResponse, parts: string[]) {
   const session = readCookie(req, ADMIN_COOKIE);
   if (!isAdminSession(session)) throw new HttpError(401, T.errors.notLoggedIn);
+  // Zusätzlich zu SameSite=Strict: Änderungen nur als JSON (ein fremdes Formular kann das nicht schicken)
+  if (req.method === "POST" && !String(req.headers["content-type"] ?? "").startsWith("application/json")) throw new HttpError(415, T.errors.badRequest);
   const [what, id, action] = parts;
   if (req.method === "POST" && what === "logout") {
     endAdminSession(session);

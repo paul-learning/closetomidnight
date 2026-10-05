@@ -70,7 +70,25 @@ test("Verlauf enthält geheime Züge, Zeitung und Ergebnis", async () => {
   assert.match(text, /## Tag 1: /);
   assert.match(text, /nimmt das Angebot am roten Telefon an/);        // geheimer Zug
   assert.match(text, /\*\*Zeitung:\*\*/);
-  assert.match(text, /kein gespeicherter Zug/);
+  assert.match(text, /kein gespeicherter Zug \(Enthaltung oder Bot\)/);
+});
+
+test("Startseite: nach dem Löschen des aktuellen Spiels kommt kein älteres zurück", async () => {
+  const a = newGame();
+  store.saveState(a.id, { ...a.state, over: true }, "2026-01-01");
+  const b = newGame();
+  assert.equal(lobby().game?.id, b.id);
+  cancelGame(b.id); deleteGame(b.id);
+  assert.deepEqual(lobby(), { game: null });
+  assert.equal((await login(0, "egal")).ok, false);
+});
+
+test("Abbruch und Löschen während die Zeitung entsteht: keine verwaiste Zeitung", async () => {
+  const g = newGame();
+  const running = resolveGame(g.id);
+  cancelGame(g.id); deleteGame(g.id);
+  await running;
+  assert.deepEqual(store.papers(g.id), []);
 });
 
 test("löschen: nur beendete oder abgebrochene Spiele, dann ist alles weg", async () => {
@@ -91,4 +109,15 @@ test("Anmeldung der Spielleitung: gültig, bis sie beendet wird", () => {
   assert.ok(!isAdminSession(undefined));
   endAdminSession(t);
   assert.ok(!isAdminSession(t));
+});
+
+test("Anmeldung der Spielleitung: neues Admin-Passwort macht alte Anmeldungen ungültig", async () => {
+  const { CONFIG } = await import("../config.ts");
+  const t = startAdminSession();
+  const old = CONFIG.adminSecret;
+  // CONFIG ist eingefroren; den Fingerabdruck prüfen wir direkt an der Datenbank
+  const { createHash } = await import("node:crypto");
+  const h = (x: string) => createHash("sha256").update(x).digest("base64url");
+  assert.ok(store.adminSessionValid(h(t), h("fvz-admin-secret:" + old)));
+  assert.ok(!store.adminSessionValid(h(t), h("fvz-admin-secret:anderes")));
 });

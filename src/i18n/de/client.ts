@@ -111,7 +111,7 @@ export const client = {
     welcomeBack: "Du bist auf diesem Gerät als {label} angemeldet.", continue: "Weiter zum Spiel", continueAdmin: "Zur Verwaltung", otherRole: "Als jemand anderes anmelden",
     newGame: "Neues Spiel anlegen",
     replaceWarning: "Es läuft gerade ein Spiel. Wenn du ein neues anlegst, wird das laufende abgebrochen.",
-    noGameRunning: "Gerade läuft kein Spiel. Die Spielleitung legt hier ein neues an.",
+    noGameRunning: "Gerade läuft kein Spiel. Die Spielleitung meldet sich hier an und legt in der Verwaltung ein neues an.",
     adminLoginHint: "mit dem Admin-Passwort",
     // Verwaltung aller Spiele
     ovGames: "Alle Spiele", ovNoGames: "Noch keine Spiele.",

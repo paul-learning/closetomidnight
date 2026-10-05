@@ -20,11 +20,14 @@ export function gameHistory(g: GameRow): string {
   const out = [H.title, "", fmt(H.created, { date: new Date(g.created || Date.now()).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" }), status }), "", H.players];
   for (const p of players) out.push(fmt(H.player, { nation: nationOf(p.idx), name: p.name }));
 
-  const moveLines = (day: number, crisis: string) => {
+  // played: Karten, die die Engine an diesem Tag wirklich ausgeführt hat (öffentlicher Tagesbericht); undefined = Tag nicht aufgelöst
+  const moveLines = (day: number, crisis: string, played?: { nation: NationId; card: string }[]) => {
     const lines = [H.moves];
     for (let idx = 0; idx < s.players.length; idx++) {
       const saved = moves.find(m => m.day === day && m.idx === idx);
-      lines.push(fmt(H.move, { nation: nationOf(idx), parts: saved ? describe(saved.move, crisis, nationOf) + (saved.locked ? "" : ` ${H.notLocked}`) : g.bots ? H.noMoveBots : H.noMove }));
+      const ran = played && saved?.move.cardId ? played.some(c => c.nation === s.players[idx].nation && c.card === saved.move.cardId) : true;
+      const parts = saved ? describe(saved.move, crisis, nationOf, ran) + (saved.locked ? "" : ` ${H.notLocked}`) : played ? H.noMoveResolved : H.noMove;
+      lines.push(fmt(H.move, { nation: nationOf(idx), parts }));
     }
     return lines;
   };
@@ -32,7 +35,7 @@ export function gameHistory(g: GameRow): string {
   for (const r of s.history) {
     out.push("", fmt(H.day, { day: r.day, crisis: T.crises[r.crisis].name }));
     out.push(r.passed ? fmt(H.passed, { response: T.crises[r.crisis].responses[r.passed] }) : r.vetoedBy ? fmt(H.vetoed, { nation: nation(r.vetoedBy) }) : H.noDeal);
-    out.push(fmt(H.clock, { time: clockTime(r.tracksAfter), ...r.tracksAfter }), "", ...moveLines(r.day, r.crisis));
+    out.push(fmt(H.clock, { time: clockTime(r.tracksAfter), ...r.tracksAfter }), "", ...moveLines(r.day, r.crisis, r.cards));
     if (r.accusation) out.push("", fmt(r.accusation.correct ? H.exposed : H.falseSuspicion, { nation: nation(r.accusation.target) }));
     const paper = papers.find(p => p.day === r.day);
     if (paper) out.push("", H.paper, "", ...paper.text.split("\n").map(l => `> ${l}`));
@@ -43,6 +46,7 @@ export function gameHistory(g: GameRow): string {
   if (s.over) {
     out.push("", H.result, fmt(H.ending, { ending: T.endings[s.ending!] }), fmt(H.winners, { names: list(s.winners) }));
     if (s.awards) out.push(fmt(H.hero, { names: list(s.awards.hero) }), fmt(H.arsonist, { names: list(s.awards.arsonist) }));
+    out.push(fmt(H.defectors, { names: list(s.players.filter(q => q.defector).map(q => q.nation)) }));
     out.push("");
     s.players.forEach((q, idx) => {
       out.push(fmt(H.score, { nation: nation(q.nation), name: players.find(p => p.idx === idx)?.name ?? "", vp: q.vp, pk: q.pk, defector: q.defector ? H.defector : "" }));
@@ -52,12 +56,12 @@ export function gameHistory(g: GameRow): string {
   return out.join("\n") + "\n";
 }
 
-function describe(m: Move, crisis: string, nationOf: (i: number) => string): string {
+function describe(m: Move, crisis: string, nationOf: (i: number) => string, cardRan: boolean): string {
   const parts = [m.vote ? fmt(H.vote, { response: T.crises[crisis]?.responses[m.vote] ?? m.vote }) : H.noVote];
   if (m.cardId) {
     const card = T.cards[m.cardId] ?? m.cardId;
     const needsTarget = CARD_POOL.find(([c]) => c.id === m.cardId)?.[0].kind === "interaktion";
-    parts.push(needsTarget && m.target !== undefined ? fmt(H.cardAgainst, { card, target: nationOf(m.target) }) : fmt(H.card, { card }));
+    parts.push((needsTarget && m.target !== undefined ? fmt(H.cardAgainst, { card, target: nationOf(m.target) }) : fmt(H.card, { card })) + (cardRan ? "" : ` ${H.notPlayed}`));
   }
   if (m.acceptOffer) parts.push(H.offer);
   if (m.defect) parts.push(H.defect);

@@ -7,7 +7,7 @@ import { generatePassword, hashPassword, verifyPassword } from "./passwords.ts";
 
 /** Öffentlich (ohne Anmeldung): nur Nationen, Spielstand und ob ein Passwort gesetzt ist. Keine Namen, keine Links. */
 export function lobby() {
-  const g = store.latestGame();
+  const g = store.currentGame();
   if (!g || g.cancelled) return { game: null };
   return {
     game: {
@@ -21,7 +21,7 @@ export type LoginResult = { ok: true; url: string } | { ok: false; reason: "noGa
 
 /** Spieler (0–3) im aktuellen Spiel. Die Spielleitung meldet sich in http/routes/login.ts an (Cookie). */
 export async function login(who: unknown, password: unknown): Promise<LoginResult> {
-  const g = store.latestGame();
+  const g = store.currentGame();
   if (!g || g.cancelled) return { ok: false, reason: "noGame" };
   const pl = typeof who === "number" ? store.players(g.id).find(p => p.idx === who) : undefined;
   if (!pl) return { ok: false, reason: "wrongPassword" };
