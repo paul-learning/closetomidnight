@@ -3,6 +3,7 @@ import { newGame, resolveDay, total } from "../engine/index.ts";
 import { rng } from "../engine/rng.ts";
 import { botMove, PERSONAS } from "../bots/bots.ts";
 import type { Persona } from "../bots/bots.ts";
+import { cardById, cardTier } from "../rules/content.ts";
 
 function play(seed: number, personas: Persona[]) {
   let s = newGame(seed); const rnd = rng(seed * 7 + 1);
@@ -14,12 +15,14 @@ function scenario(label: string, games: number, pick: (g: number) => Persona[]) 
   let exposed = 0, survived = 0, defectorGames = 0, defectorWins = 0, totalSum = 0, daySum = 0;
   const endings: Record<string, number> = {}; const winsBy: Record<string, number> = {}; const seatsBy: Record<string, number> = {};
   const nationWins: Record<string, number> = {};
+  const tierPlays = [0, 0, 0]; let blocked = 0, plays = 0;
   for (let g = 0; g < games; g++) {
     const personas = pick(g); const s = play(1000 + g, personas);
     personas.forEach(p => seatsBy[p] = (seatsBy[p] ?? 0) + 1);
     endings[s.ending!] = (endings[s.ending!] ?? 0) + 1;
     if (s.ending === "vernunft") survived++;
     totalSum += total(s.tracks); daySum += s.day;
+    for (const r of s.history) for (const c of r.cards) { plays++; if (c.blocked) blocked++; const d = cardById(c.card); if (d) tierPlays[cardTier(d)]++; }
     const def = s.players.findIndex(p => p.defector);
     if (def >= 0) { defectorGames++; if (s.players[def].exposed) exposed++; if (s.winners?.includes(s.players[def].nation)) defectorWins++; }
     s.winners?.forEach(n => { nationWins[n] = (nationWins[n] ?? 0) + 1; const pi = s.players.findIndex(p => p.nation === n); winsBy[personas[pi]] = (winsBy[personas[pi]] ?? 0) + 1; });
@@ -29,6 +32,7 @@ function scenario(label: string, games: number, pick: (g: number) => Persona[]) 
   console.log(`Überlebt: ${pct(survived)} | Enden: ${Object.entries(endings).map(([k, v]) => `${k} ${pct(v)}`).join(", ")} | Ø Tag am Ende: ${(daySum / games).toFixed(1)} | Ø Doom am Ende: ${(totalSum / games).toFixed(1)}/24`);
   console.log(`Überläufer in ${pct(defectorGames)} der Spiele, gewinnt davon ${defectorGames ? pct(defectorWins, defectorGames) : "-"}, enttarnt ${defectorGames ? pct(exposed, defectorGames) : "-"}`);
   console.log(`Siegquote je Persona (pro Sitz): ${Object.keys(seatsBy).map(p => `${p} ${pct(winsBy[p] ?? 0, seatsBy[p])}`).join(", ")}`);
+  console.log(`Karten pro Spiel: ${(plays / games).toFixed(1)} (normal ${pct(tierPlays[0], plays)}, krass ${pct(tierPlays[1], plays)}, richtig krass ${pct(tierPlays[2], plays)}, verpufft ${pct(blocked, plays)})`);
   console.log(`Siege je Nation: ${Object.entries(nationWins).map(([k, v]) => `${k} ${pct(v)}`).join(", ")}`);
 }
 

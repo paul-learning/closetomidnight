@@ -54,9 +54,15 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     return { p, c, target, interactive };
   });
 
+  // Blockaden wirken vor allem anderen: Die Karte des Ziels verpufft, auch wenn das Ziel selbst blockiert.
+  const blocked = new Set(played.filter(x => x?.c.block && x.target).map(x => x!.target!));
   for (const play of played) {
     if (!play) continue;
     const { p, c, target, interactive } = play;
+    if (blocked.has(p)) {
+      rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined, blocked: true });
+      continue;
+    }
     p.vp += c.vp ?? 0; p.pk += c.pk ?? 0;
     for (const t of TRACKS) {
       const d = c.tracks?.[t]; if (!d) continue;
@@ -69,11 +75,13 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     // Ohne Untergrenze: Wie viele Siegpunkte das Ziel hat, ist geheim und soll es bleiben
     if (c.sanction && target) target.vp -= c.sanction;
     if (c.leak && target) {
-      const goal = target.goals.find(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
-      if (goal) p.intel.push({ nation: target.nation, goal, day: rep.day });
+      const unknown = target.goals.filter(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
+      for (const goal of unknown.slice(0, Number(c.leak))) p.intel.push({ nation: target.nation, goal, day: rep.day });
     }
     rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined, ...(stolen !== undefined ? { stolen } : {}) });
   }
+  // Einfluss für alle erst nach allen Karten: sonst hinge ein Diebstahl von der Sitzreihenfolge ab
+  for (const play of played) if (play?.c.everyonePk && !blocked.has(play.p)) s.players.forEach(q => { q.pk += play.c.everyonePk!; });
 }
 
 /** 2b. Kosten des Ratsbeschlusses: erst nach den Karten, damit eine festgelegte Karte nie am Beschluss scheitert. */

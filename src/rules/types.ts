@@ -32,8 +32,10 @@ export interface Card {
   pk?: number; // Einfluss-Gewinn
   tracks?: Partial<Record<Track, number>>;
   steal?: number; // Einfluss von einem Ziel nehmen
-  leak?: boolean; // ein geheimes Ziel eines Spielers aufdecken
+  leak?: number | true; // so viele geheime Ziele des Ziels aufdecken (true: alte Spielstände, zählt als 1)
   sanction?: number; // das Ziel verliert so viele Siegpunkte
+  block?: boolean; // die Karte des Ziels verpufft heute (bezahlt ist sie trotzdem)
+  everyonePk?: number; // alle Spieler (auch du) bekommen so viel Einfluss
 }
 
 export interface Offer {

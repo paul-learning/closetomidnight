@@ -1,6 +1,6 @@
 // Spielstart und tägliches Austeilen der Angebote.
 import { BALANCE } from "../rules/balance.ts";
-import { CARD_POOL, CRISES, GOALS, OFFERS } from "../rules/content.ts";
+import { CARDS, CRISES, GOALS, OFFERS } from "../rules/content.ts";
 import { NATION_RULES } from "../rules/nations.ts";
 import { NATIONS } from "../rules/types.ts";
 import type { PowerId, Track } from "../rules/types.ts";
@@ -11,7 +11,7 @@ const POWERS: PowerId[] = ["trampel", "putsch", "xistabil", "moschus"];
 
 export function newGame(seed: number): GameState {
   const rnd = rng(seed);
-  let deck = shuffle(CARD_POOL.flatMap(([c, n]) => Array(n).fill(c)), rnd);
+  let deck = shuffle(structuredClone(CARDS), rnd);
   const clean = shuffle(GOALS.filter(g => g.kind === "sauber"), rnd);
   const dirty = shuffle(GOALS.filter(g => g.kind === "schmutzig"), rnd);
   const players: Player[] = NATIONS.map((nation, i) => {

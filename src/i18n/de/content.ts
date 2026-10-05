@@ -6,7 +6,7 @@ export const content = {
   nations: {
     teutonien: { name: "Teutonien", ability: "Reichste Nation: startet mit 2 Einfluss mehr" },
     gallien: { name: "Gallien", ability: "Einmal pro Spiel: Veto gegen einen Ratsbeschluss" },
-    polonien: { name: "Polonien", ability: "Karten, die Krieg betreffen, kosten 1 Einfluss weniger" },
+    polonien: { name: "Polonien", ability: "Karten, die Krieg betreffen, kosten 1 Einfluss weniger (mindestens 1)" },
     italica: { name: "Italica", ability: "Sieht die Krise von morgen einen Tag früher" },
   },
   powers: {
@@ -42,9 +42,21 @@ export const content = {
     bankencrash: { name: "Bankencrash nach Trampel-Tweet", responses: { rettung: "Gemeinsamer Rettungsschirm", bundesbank: "Teutonien bürgt", markt: "Der Markt regelt das" } },
   } as Record<string, { name: string; responses: Record<string, string> }>,
   cards: {
+    // normal
     gipfel: "Friedensgipfel", faktencheck: "Faktencheck-Offensive", pressefreiheit: "Pressefreiheitspaket", konjunktur: "Konjunkturprogramm",
+    abruestung: "Abrüstungsvertrag", buergerrat: "Bürgerrat auslosen", lichterkette: "Lichterkette", tempolimit: "Tempolimit 130",
     waffendeal: "Waffendeal mit Moskowien", notstand: "Notstandsgesetze", steuerdumping: "Steuerdumping", propaganda: "Staatsfernsehen ausbauen",
+    diaeten: "Diätenerhöhung", soeldner: "Söldner anheuern",
     erpressung: "Erpressung", leak: "Geheimdienst-Leak", sanktionen: "Sanktionen",
+    abwerbung: "Fachkräfte abwerben", strafzoelle: "Strafzölle", ballon: "Spionageballon",
+    // krass
+    weltfrieden: "Weltfriedensgipfel", gruenerdeal: "Grüner Jahrhundertdeal", verfassung: "Verfassungsgericht stärken", marshallplan: "Marshallplan 2.0",
+    staatsstreich: "Staatsstreich im Nachbarland", ruestungsboom: "Rüstungsboom", steueroase: "Steueroase eröffnen", botarmee: "Bot-Armee im Netz",
+    handelskrieg: "Handelskrieg", cyberangriff: "Cyberangriff", doppelagent: "Doppelagent", ausweisung: "Botschafter ausweisen",
+    // richtig krass
+    weltregierung: "Weltregierung ausrufen", nobelpreis: "Friedensnobelpreis kaufen", grundeinkommen: "Grundeinkommen für alle",
+    atomtest: "Atomtest im Urlaubsparadies", ermaechtigung: "Ermächtigungsgesetz", marskolonie: "Marskolonie für Milliardäre",
+    regimewechsel: "Regimewechsel", wahlhack: "Wahlen hacken",
   } as Record<string, string>,
   goals: {
     "kollaps-niedrig": "Kollaps endet bei 3 oder weniger",

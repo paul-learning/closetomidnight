@@ -23,6 +23,7 @@ export const history = {
     offer: "nimmt das Angebot am roten Telefon an",
     defect: "will überlaufen",
     notPlayed: "(nicht ausgeführt)",
+    blocked: "(verpufft, blockiert)",
     veto: "legt Veto ein",
     accuse: "beschuldigt {target}",
     notLocked: "(nicht festgelegt)",

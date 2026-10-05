@@ -4,7 +4,7 @@ import { clockTime } from "../engine/index.ts";
 import type { Move } from "../engine/index.ts";
 import { T, fmt } from "../i18n/index.ts";
 import { BALANCE } from "../rules/balance.ts";
-import { CARD_POOL } from "../rules/content.ts";
+import { cardById } from "../rules/content.ts";
 import type { NationId } from "../rules/types.ts";
 import type { GameRow } from "./store.ts";
 import { store } from "./store.ts";
@@ -22,12 +22,13 @@ export function gameHistory(g: GameRow): string {
   for (const p of players) out.push(fmt(H.player, { nation: nationOf(p.idx), name: p.name }));
 
   // played: Karten, die die Engine an diesem Tag wirklich ausgeführt hat (öffentlicher Tagesbericht); undefined = Tag nicht aufgelöst
-  const moveLines = (day: number, crisis: string, played?: { nation: NationId; card: string }[]) => {
+  const moveLines = (day: number, crisis: string, played?: { nation: NationId; card: string; blocked?: boolean }[]) => {
     const lines = [H.moves];
     for (let idx = 0; idx < s.players.length; idx++) {
       const saved = moves.find(m => m.day === day && m.idx === idx);
       const ran = played && saved?.move.cardId ? played.some(c => c.nation === s.players[idx].nation && c.card === saved.move.cardId) : true;
-      const parts = saved ? describe(saved.move, crisis, nationOf, ran) + (saved.locked ? "" : ` ${H.notLocked}`) : played ? H.noMoveResolved : H.noMove;
+      const fizzled = !!played?.some(c => c.nation === s.players[idx].nation && c.blocked);
+      const parts = saved ? describe(saved.move, crisis, nationOf, ran) + (fizzled ? ` ${H.blocked}` : "") + (saved.locked ? "" : ` ${H.notLocked}`) : played ? H.noMoveResolved : H.noMove;
       lines.push(fmt(H.move, { nation: nationOf(idx), parts }));
     }
     return lines;
@@ -61,7 +62,7 @@ function describe(m: Move, crisis: string, nationOf: (i: number) => string, card
   const parts = [m.vote ? fmt(H.vote, { response: T.crises[crisis]?.responses[m.vote] ?? m.vote }) : H.noVote];
   if (m.cardId) {
     const card = T.cards[m.cardId] ?? m.cardId;
-    const needsTarget = CARD_POOL.find(([c]) => c.id === m.cardId)?.[0].kind === "interaktion";
+    const needsTarget = cardById(m.cardId)?.kind === "interaktion";
     parts.push((needsTarget && m.target !== undefined ? fmt(H.cardAgainst, { card, target: nationOf(m.target) }) : fmt(H.card, { card })) + (cardRan ? "" : ` ${H.notPlayed}`));
   }
   if (m.acceptOffer) parts.push(H.offer);

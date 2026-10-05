@@ -1,6 +1,6 @@
 // Die Schritte eines Tageszugs: Krise, Aktion, rotes Telefon, Geheimakte, Übersicht.
 import { T, fmt } from "../util.js";
-import { cardEffects, cardName, crisisName, goalText, nation, offerEffects, powerName, responseEffects, responseName, tag } from "../names.js";
+import { cardEffects, cardName, crisisName, goalText, nation, offerEffects, powerName, responseEffects, responseName, tag, vpText } from "../names.js";
 
 const C = T.client;
 /** Mit gespeichertem Zug beginnt die Seite auf der Übersicht, sonst beim ersten Schritt. */
@@ -30,7 +30,7 @@ export const STEPS = {
           return `<option value="${p.idx}" ${m.target === p.idx && !known ? "selected" : ""} ${known ? "disabled" : ""}>${nation(p.nation)}${known ? ` (${C.allGoalsKnown})` : ""}</option>`;
         }).join("")}</select>` : "";
       return option("card", c.id, m.cardId === c.id, dis || (poor ? "disabled" : ""),
-        `${tag(c.kind)}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");
+        `${tag(c.kind)}${c.tier ? `<span class="tag tier${c.tier}">${C.tiers[c.tier]}</span>` : ""}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");
     }).join("")}${option("card", "", !m.cardId, dis, `<span class="n">${C.noCard}</span>`)}</div>`;
   },
   telefon(d, m, dis) {
@@ -42,7 +42,7 @@ export const STEPS = {
   akte(d, m, dis) {
     const me = d.me, others = d.players.filter(p => p.idx !== me.idx);
     let h = `<p class="hint">${fmt(C.ability, { ability: T.nations[me.nation].ability })}</p><p><b>${C.yourGoals}</b></p>
-      <ul class="secret">${me.goals.map(g => `<li>${tag(g.kind)}${goalText(g)} <span class="vp">${g.vp ? fmt(C.fx.vp, { n: g.vp }) : ""}</span></li>`).join("")}</ul>`;
+      <ul class="secret">${me.goals.map(g => `<li>${tag(g.kind)}${goalText(g)} <span class="vp">${g.vp ? vpText(g.vp) : ""}</span></li>`).join("")}</ul>`;
     if (me.intel.length) h += `<p><b>${C.intel}</b></p><ul class="secret">${me.intel.map(x => `<li>${fmt(C.intelLine, { nation: nation(x.nation), goal: goalText(x.goal) })}</li>`).join("")}</ul>`;
     if (me.vetoAvailable) h += `<label class="switch danger"><input type="checkbox" name="veto" ${m.veto ? "checked" : ""} ${dis}> <span><b>${C.veto}</b> ${C.vetoText}</span></label>`;
     if (!d.accusationUsed) h += `<div class="danger"><b>${C.accuseTitle}</b><p class="hint">${fmt(C.accuseText, { votes: d.rules.accuseVotesNeeded, penalty: d.rules.accuseWrongPenalty })}</p>
