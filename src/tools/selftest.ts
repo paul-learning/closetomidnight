@@ -158,6 +158,25 @@ test("Sanktionen: braucht ein Ziel, kostet 1 Einfluss, Ziel verliert 1 Siegpunkt
   assert.deepEqual(incomingFor(next, 2)!.cards, [{ nation: next.players[0].nation, card: "sanktionen", stolen: null, vpLost: 1 }]);
 });
 
+test("Leak: Spieler, deren Ziele man schon alle kennt, sind kein Ziel mehr (Regel, Seite, Bots)", async () => {
+  const { playerView } = await import("../game/view.ts");
+  const s = newGame(22);
+  const leak = { id: "leak", kind: "interaktion", cost: 2, leak: true } as const;
+  s.players[0].hand = [{ ...leak }];
+  s.players[0].intel = s.players[1].goals.map(goal => ({ nation: s.players[1].nation, goal }));
+  assert.throws(() => validateMove(s, 0, { vote: null, cardId: "leak", target: 1 }), (e: any) => e instanceof RuleError && e.code === "leakKnown");
+  assert.doesNotThrow(() => validateMove(s, 0, { vote: null, cardId: "leak", target: 2 }), "andere Ziele bleiben wählbar");
+  const rows = s.players.map((_, j) => ({ name: `P${j}` })) as any;
+  const view = playerView(s, 0, rows, [null, null, null, null], []);
+  assert.deepEqual(view.players.map(p => p.allGoalsKnown), [false, true, false, false]);
+  // Bots: nie gegen ein bekanntes Ziel; sind alle bekannt, wird die Karte nicht gespielt
+  for (const t of [2, 3]) s.players[0].intel.push(...s.players[t].goals.map(goal => ({ nation: s.players[t].nation, goal })));
+  for (let k = 0; k < 50; k++) {
+    const m = botMove(s, 0, "taktiker", () => k / 50);
+    assert.notEqual(m.cardId, "leak");
+  }
+});
+
 test("Kartenstapel: Interaktionskarten häufig genug", () => {
   const total = CARD_POOL.reduce((n, [, k]) => n + k, 0);
   const inter = CARD_POOL.filter(([c]) => c.kind === "interaktion").reduce((n, [, k]) => n + k, 0);

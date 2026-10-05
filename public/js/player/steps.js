@@ -24,7 +24,10 @@ export const STEPS = {
     return `<p class="hint">${fmt(C.actionHint, { pk: d.me.pk })}</p><div class="opts">${d.me.hand.map(c => {
       const poor = c.effCost > d.me.pk;
       const target = c.kind === "interaktion" && m.cardId === c.id
-        ? `<select name="target" ${dis}><option value="">${C.chooseTarget}</option>${others.map(p => `<option value="${p.idx}" ${m.target === p.idx ? "selected" : ""}>${nation(p.nation)}</option>`).join("")}</select>` : "";
+        ? `<select name="target" ${dis}><option value="">${C.chooseTarget}</option>${others.map(p => {
+          const known = c.leak && p.allGoalsKnown; // Leak gegen jemanden, dessen Ziele du alle kennst, brächte nichts
+          return `<option value="${p.idx}" ${m.target === p.idx && !known ? "selected" : ""} ${known ? "disabled" : ""}>${nation(p.nation)}${known ? ` (${C.allGoalsKnown})` : ""}</option>`;
+        }).join("")}</select>` : "";
       return option("card", c.id, m.cardId === c.id, dis || (poor ? "disabled" : ""),
         `${tag(c.kind)}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");
     }).join("")}${option("card", "", !m.cardId, dis, `<span class="n">${C.noCard}</span>`)}</div>`;

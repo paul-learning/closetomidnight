@@ -3,6 +3,7 @@ export const server = {
   errors: {
     gameOver: "Das Spiel ist vorbei.",
     needTarget: "Für diese Karte musst du ein Ziel wählen.",
+    leakKnown: "Die Ziele dieses Spielers kennst du schon alle. Wähl jemand anderen.",
     cannotDefect: "Überlaufen ist gerade nicht erlaubt.",
     tooExpensive: "Dafür reicht dein Einfluss nicht.",
     badLink: "Dieser Spieler-Link gilt nicht (mehr). Melde dich auf der Startseite mit deinem Passwort an.",

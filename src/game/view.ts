@@ -1,7 +1,7 @@
 // Was Spieler und Spielleitung sehen dürfen. Nur IDs und Zahlen; die Oberfläche setzt die Texte ein.
 // Geheimnisse anderer (Ziele, Siegpunkte, Angebote, Überläufer) bleiben verborgen, bis das Spiel endet.
 import { CONFIG } from "../config.ts";
-import { canDefect, canVeto, cardCost, clockTime, hasForesight, minutesLeft, offerFor } from "../engine/index.ts";
+import { canDefect, canVeto, cardCost, clockTime, hasForesight, knowsAllGoals, minutesLeft, offerFor } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
 import { CARD_POOL, GOALS } from "../rules/content.ts";
@@ -51,6 +51,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
     accusationUsed: s.accusationUsed,
     players: s.players.map((q, j) => ({
       idx: j, nation: q.nation, playerName: players[j].name, pk: q.pk, locked: !!moves[j]?.locked,
+      allGoalsKnown: j !== i && knowsAllGoals(s, i, j), // für den Leak: Ziel nicht mehr wählbar
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),
     papers,

@@ -39,6 +39,7 @@ export const client = {
     incomingStealNothing: "{nation} hat „{card}“ gegen dich gespielt – bei dir war aber nichts zu holen.",
     incomingLeak: "{nation} hat „{card}“ gegen dich gespielt und eines deiner geheimen Ziele erfahren.",
     incomingLeakDefector: "{nation} hat „{card}“ gegen dich gespielt und eines deiner ursprünglichen Ziele erfahren. Dass du übergelaufen bist, verrät das nicht.",
+    allGoalsKnown: "Ziele schon bekannt",
     incomingSanction: "{nation} hat „{card}“ gegen dich verhängt: Du verlierst {n} Siegpunkt.",
     incomingCard: "{nation} hat „{card}“ gegen dich gespielt.",
     incomingAccusedRight: "Du wurdest im Misstrauensvotum als Überläufer enttarnt.",
