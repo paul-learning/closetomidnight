@@ -4,7 +4,7 @@ import { clockTime } from "../engine/index.ts";
 import type { Move } from "../engine/index.ts";
 import { T, fmt } from "../i18n/index.ts";
 import { BALANCE } from "../rules/balance.ts";
-import { CARD_POOL } from "../rules/content.ts";
+import { cardById } from "../rules/content.ts";
 import type { NationId } from "../rules/types.ts";
 import type { GameRow } from "./store.ts";
 import { store } from "./store.ts";
@@ -61,7 +61,7 @@ function describe(m: Move, crisis: string, nationOf: (i: number) => string, card
   const parts = [m.vote ? fmt(H.vote, { response: T.crises[crisis]?.responses[m.vote] ?? m.vote }) : H.noVote];
   if (m.cardId) {
     const card = T.cards[m.cardId] ?? m.cardId;
-    const needsTarget = CARD_POOL.find(([c]) => c.id === m.cardId)?.[0].kind === "interaktion";
+    const needsTarget = cardById(m.cardId)?.kind === "interaktion";
     parts.push((needsTarget && m.target !== undefined ? fmt(H.cardAgainst, { card, target: nationOf(m.target) }) : fmt(H.card, { card })) + (cardRan ? "" : ` ${H.notPlayed}`));
   }
   if (m.acceptOffer) parts.push(H.offer);

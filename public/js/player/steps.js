@@ -30,7 +30,7 @@ export const STEPS = {
           return `<option value="${p.idx}" ${m.target === p.idx && !known ? "selected" : ""} ${known ? "disabled" : ""}>${nation(p.nation)}${known ? ` (${C.allGoalsKnown})` : ""}</option>`;
         }).join("")}</select>` : "";
       return option("card", c.id, m.cardId === c.id, dis || (poor ? "disabled" : ""),
-        `${tag(c.kind)}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");
+        `${tag(c.kind)}${c.tier ? `<span class="tag tier${c.tier}">${C.tiers[c.tier]}</span>` : ""}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");
     }).join("")}${option("card", "", !m.cardId, dis, `<span class="n">${C.noCard}</span>`)}</div>`;
   },
   telefon(d, m, dis) {

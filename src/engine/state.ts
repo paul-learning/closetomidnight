@@ -31,7 +31,7 @@ export interface DayReport {
   votes: Partial<Record<NationId, string>>; // Response-IDs
   passed: string | null; // Response-ID
   vetoedBy: NationId | null;
-  cards: { nation: NationId; card: string; target?: NationId; stolen?: number }[]; // stolen: tatsächlich genommener Einfluss
+  cards: { nation: NationId; card: string; target?: NationId; stolen?: number; blocked?: boolean }[]; // stolen: tatsächlich genommener Einfluss; blocked: verpufft (Blockade)
   offersTaken: PowerId[];
   accusation: { target: NationId; correct: boolean } | null;
   tracksBefore: Record<Track, number>;

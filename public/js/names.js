@@ -15,7 +15,9 @@ export function cardEffects(c) {
   if (c.pk) parts.push(fmt(C.fx.pk, { n: c.pk }));
   for (const [t, v] of Object.entries(c.tracks || {})) parts.push(`${T.tracks[t]} ${v > 0 ? "+" : "−"}${Math.abs(v)}`);
   if (c.steal) parts.push(fmt(C.fx.steal, { n: c.steal }));
-  if (c.leak) parts.push(C.fx.leak);
+  if (c.block) parts.push(C.fx.block);
+  if (c.leak) parts.push(Number(c.leak) > 1 ? C.fx.leakAll : C.fx.leak);
+  if (c.everyonePk) parts.push(fmt(C.fx.everyonePk, { n: c.everyonePk }));
   if (c.sanction) parts.push(fmt(C.fx.sanction, { n: c.sanction }));
   return parts.join(" · ");
 }

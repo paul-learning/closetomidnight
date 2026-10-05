@@ -12,7 +12,7 @@ function decision(r: DayReport): string {
 
 export function prompt(s: GameState, r: DayReport): string {
   const Q = T.prompt;
-  const cardList = (d: DayReport) => d.cards.map(c => `${nation(c.nation)}: ${T.cards[c.card]}${c.target ? ` → ${nation(c.target)}` : ""}`).join("; ") || Q.none;
+  const cardList = (d: DayReport) => d.cards.map(c => `${nation(c.nation)}: ${T.cards[c.card] ?? c.card}${c.target ? ` → ${nation(c.target)}` : ""}${c.blocked ? ` (${Q.blocked})` : ""}`).join("; ") || Q.none;
   const earlier = s.history.slice(0, -1).map(h => fmt(Q.earlierDay, { day: h.day, crisis: crisisName(h.crisis), decision: decision(h), cards: cardList(h) }));
   return [
     fmt(Q.intro, { day: r.day, time: time(s, r) }), "", Q.today,

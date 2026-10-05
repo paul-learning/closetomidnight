@@ -4,7 +4,7 @@ import { CONFIG } from "../config.ts";
 import { canDefect, canVeto, cardCost, clockTime, hasForesight, knowsAllGoals, minutesLeft, offerFor } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
-import { CARD_POOL, GOALS } from "../rules/content.ts";
+import { GOALS, cardById, cardTier } from "../rules/content.ts";
 import type { PlayerRow, SavedMove } from "./store.ts";
 import { playerUrl } from "./registration.ts";
 import { aiConfigured, aiLabel } from "../integrations/ai.ts";
@@ -17,10 +17,16 @@ import { subscriberCount, vapidPublicKey } from "./notifications.ts";
 export function incomingFor(s: GameState, i: number) {
   const r = s.history.at(-1), me = s.players[i].nation;
   if (!r) return null;
-  const cards = r.cards.filter(c => c.target === me).map(c => ({
-    nation: c.nation, card: c.card, stolen: c.stolen ?? null,
-    vpLost: CARD_POOL.find(([k]) => k.id === c.card)?.[0].sanction ?? null,
-  }));
+  const mine = r.cards.find(c => c.nation === me);
+  const cards = r.cards.filter(c => c.target === me).map(c => {
+    const def = cardById(c.card);
+    return {
+      nation: c.nation, card: c.card, fizzled: !!c.blocked, stolen: c.stolen ?? null, vpLost: def?.sanction ?? null,
+      leaked: def?.leak ? Number(def.leak) : null,
+      // Blockade: ist meine Karte verpufft, oder hatte ich gar keine gespielt?
+      blockedMine: def?.block ? !!mine?.blocked : null,
+    };
+  });
   const accused = r.accusation?.target === me ? { correct: r.accusation.correct } : null;
   return cards.length || accused ? { day: r.day, cards, accused } : null;
 }
@@ -39,7 +45,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
     over: s.over, ending: s.ending ?? null, winners: s.winners ?? [], awards: s.awards ?? null,
     me: {
       idx: i, nation: p.nation, playerName: players[i].name, pk: p.pk, vp: p.vp, defector: p.defector, exposed: p.exposed,
-      hand: p.hand.map(c => ({ ...c, effCost: cardCost(p, c) })),
+      hand: p.hand.map(c => ({ ...c, effCost: cardCost(p, c), tier: cardTier(c) })),
       goals: p.defector ? [{ id: "defector", kind: "schmutzig", vp: 0 }] : goalInfo(p.goals),
       intel: p.intel,
       // Was der eigene Leak am zuletzt aufgelösten Tag ergeben hat (eigener Kasten oben auf der Seite)

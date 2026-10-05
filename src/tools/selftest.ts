@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { T } from "../i18n/index.ts";
-import { CARD_POOL, CRISES, GOALS, OFFERS } from "../rules/content.ts";
+import { CARDS, CRISES, GOALS, OFFERS, cardTier } from "../rules/content.ts";
 import { NATIONS } from "../rules/types.ts";
 import { NATION_RULES } from "../rules/nations.ts";
 import { newGame, resolveDay } from "../engine/index.ts";
@@ -15,7 +15,7 @@ test("jeder Spielinhalt hat einen Text", () => {
     assert.ok(T.crises[c.id]?.name, `Krise ${c.id}`);
     for (const r of c.responses) assert.ok(T.crises[c.id].responses[r.id], `Option ${c.id}/${r.id}`);
   }
-  for (const [c] of CARD_POOL) assert.ok(T.cards[c.id], `Karte ${c.id}`);
+  for (const c of CARDS) assert.ok(T.cards[c.id], `Karte ${c.id}`);
   for (const o of OFFERS) { assert.ok(T.offers[o.id], `Angebot ${o.id}`); assert.ok(T.powers[o.power]?.name, `Großmacht ${o.power}`); }
   for (const g of GOALS) assert.ok(T.goals[g.id], `Ziel ${g.id}`);
 });
@@ -155,7 +155,7 @@ test("Sanktionen: braucht ein Ziel, kostet 1 Einfluss, Ziel verliert 1 Siegpunkt
   const next = resolveDay(s, [{ ...none, cardId: "sanktionen", target: 2 }, none, none, none]);
   assert.equal(next.players[2].vp, before.vp2 - 1);
   assert.ok(next.players[0].pk <= before.pk0 - 1 + 3, "Kosten bezahlt (plus Tageseinkommen)");
-  assert.deepEqual(incomingFor(next, 2)!.cards, [{ nation: next.players[0].nation, card: "sanktionen", stolen: null, vpLost: 1 }]);
+  assert.deepEqual(incomingFor(next, 2)!.cards, [{ nation: next.players[0].nation, card: "sanktionen", fizzled: false, stolen: null, vpLost: 1, leaked: null, blockedMine: null }]);
 });
 
 test("Leak: Spieler, deren Ziele man schon alle kennt, sind kein Ziel mehr (Regel, Seite, Bots)", async () => {
@@ -197,10 +197,49 @@ test("Leak: das aufgedeckte Ziel steht am nächsten Tag im Kasten, danach nur no
   assert.equal(view(later, 0).me.intel.length, 2, "in der Akte bleibt alles");
 });
 
-test("Kartenstapel: Interaktionskarten häufig genug", () => {
-  const total = CARD_POOL.reduce((n, [, k]) => n + k, 0);
-  const inter = CARD_POOL.filter(([c]) => c.kind === "interaktion").reduce((n, [, k]) => n + k, 0);
+test("Kartenstapel: jede Karte einmal, 50/30/20 nach Klassen, Interaktion häufig genug", () => {
+  assert.equal(new Set(CARDS.map(c => c.id)).size, CARDS.length, "keine Doppelungen");
+  const tiers = [0, 1, 2].map(k => CARDS.filter(c => cardTier(c) === k).length / CARDS.length);
+  assert.deepEqual(tiers, [0.5, 0.3, 0.2]);
+  for (const c of CARDS) assert.ok(c.cost <= 3 || (c.cost >= 5 && c.cost <= 8), `${c.id}: Preis passt in eine Klasse`);
+  const total = CARDS.length, inter = CARDS.filter(c => c.kind === "interaktion").length;
   // Wahrscheinlichkeit, ohne Interaktionskarte in den drei Startkarten zu sein
   const none = ((total - inter) / total) * ((total - inter - 1) / (total - 1)) * ((total - inter - 2) / (total - 2));
-  assert.ok(none < 0.35, `${Math.round(none * 100)} % ohne Interaktionskarte (vorher 53 %)`);
+  assert.ok(none < 0.35, `${Math.round(none * 100)} % ohne Interaktionskarte`);
+  assert.equal(newGame(1).deck.length + 12, total, "alle Karten im Spiel");
 });
+
+test("Cyberangriff: die Karte des Ziels verpufft (bezahlt), steht im Bericht und im Kasten", async () => {
+  const { incomingFor } = await import("../game/view.ts");
+  const s = newGame(31);
+  s.players[0].hand = [{ id: "cyberangriff", kind: "interaktion", cost: 5, block: true }];
+  s.players[1].hand = [{ id: "waffendeal", kind: "schmutzig", cost: 1, vp: 3, tracks: { krieg: 1 } }];
+  s.players[0].pk = 5;
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(s, [{ ...none, cardId: "cyberangriff", target: 1 }, { ...none, cardId: "waffendeal" }, none, none]);
+  assert.equal(next.players[1].vp, s.players[1].vp, "keine Siegpunkte");
+  assert.equal(next.tracks.krieg >= s.tracks.krieg, true);
+  assert.equal(next.players[1].hand.some(c => c.id === "waffendeal"), false, "Karte ist weg");
+  assert.deepEqual(next.history.at(-1)!.cards.find(c => c.card === "waffendeal"), { nation: next.players[1].nation, card: "waffendeal", target: undefined, blocked: true });
+  assert.equal(incomingFor(next, 1)!.cards[0].blockedMine, true);
+  // Gegenseitig: beide verpuffen
+  const t = newGame(32);
+  for (const k of [0, 1]) { t.players[k].hand = [{ id: "cyberangriff", kind: "interaktion", cost: 5, block: true }]; t.players[k].pk = 5; }
+  const both = resolveDay(t, [{ ...none, cardId: "cyberangriff", target: 1 }, { ...none, cardId: "cyberangriff", target: 0 }, none, none]);
+  assert.deepEqual(both.history.at(-1)!.cards.map(c => c.blocked), [true, true]);
+  assert.equal(incomingFor(both, 1)!.cards[0].fizzled, true);
+});
+
+test("Doppelagent deckt beide Ziele auf, Grundeinkommen gibt allen Einfluss", () => {
+  const s = newGame(33);
+  s.players[0].hand = [{ id: "doppelagent", kind: "interaktion", cost: 6, leak: 2 }];
+  s.players[2].hand = [{ id: "grundeinkommen", kind: "sauber", cost: 7, vp: 2, everyonePk: 3, tracks: { kollaps: -2 } }];
+  s.players[0].pk = 6; s.players[2].pk = 7;
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(s, [{ ...none, cardId: "doppelagent", target: 1 }, none, { ...none, cardId: "grundeinkommen" }, none]);
+  assert.deepEqual(next.players[0].intel.map(x => x.goal).sort(), [...s.players[1].goals].sort());
+  // Einkommen 3 pro Tag plus 3 aus dem Grundeinkommen
+  assert.equal(next.players[3].pk, s.players[3].pk + 3 + 3);
+  assert.equal(next.players[0].pk, 0 + 3 + 3);
+});
+
