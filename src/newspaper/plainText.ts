@@ -6,10 +6,11 @@ export function toPlainText(text: string): string {
     .replace(/^```[^\n]*\n?|\n?```$/gm, "")            // Codeblock-Zäune
     .split("\n")
     .map(line => line
-      .replace(/^\s{0,3}#{1,6}\s+/, "")                // Überschriften
-      .replace(/^\s{0,3}(?:[-*+]|•)\s+/, "• ")         // Aufzählungen einheitlich mit •
+      .replace(/^\s{0,3}(?:[-*_]\s*){3,}$/, "")         // Trennlinien (vor den Aufzählungen: „* * *“ ist keine)
+      .replace(/^\s{0,3}=+\s*$/, "")                    // Unterstreichung einer Überschrift (=====)
+      .replace(/^\s{0,3}#{1,6}\s+(.*?)(?:\s+#+)?\s*$/, "$1") // Überschriften, auch mit schließenden #
+      .replace(/^\s*(?:[-*+]|•)\s+/, "• ")             // Aufzählungen einheitlich mit •, auch eingerückt
       .replace(/^\s{0,3}>\s?/, "")                      // Zitatblöcke
-      .replace(/^\s{0,3}(?:[-*_]\s*){3,}$/, "")         // Trennlinien
       .replace(/\*\*(.+?)\*\*|__(.+?)__/g, "$1$2")      // fett
       .replace(/(^|[\s(„"])\*(?!\s)(.+?)(?<!\s)\*(?=[\s).,;:!?“"]|$)/g, "$1$2") // kursiv mit *
       .replace(/(^|[\s(„"])_(?!\s)(.+?)(?<!\s)_(?=[\s).,;:!?“"]|$)/g, "$1$2")   // kursiv mit _

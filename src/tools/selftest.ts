@@ -110,6 +110,11 @@ test("Zeitungstext: Markdown wird zu reinem Text", async () => {
   assert.equal(toPlainText("## Schlagzeile\n\n- Teutonien *stimmt* für __Krieg__\n* Gallien spielt `Notstand`\n\n\n> „Zitat“ – Trampel\n---\nDie Uhr steht auf 23:40"),
     "Schlagzeile\n\n• Teutonien stimmt für Krieg\n• Gallien spielt Notstand\n\n„Zitat“ – Trampel\n\nDie Uhr steht auf 23:40");
   assert.equal(toPlainText("Mehr unter [Kurier](https://example.org)."), "Mehr unter Kurier.");
+  // aus dem Review: Trennlinien mit Abständen, schließende #, Unterstreichung, eingerückte Punkte
+  assert.equal(toPlainText("Oben\n* * *\n- - -\nUnten"), "Oben\n\n\nUnten".replace(/\n{3,}/g, "\n\n"));
+  assert.equal(toPlainText("## Schlagzeile ##"), "Schlagzeile");
+  assert.equal(toPlainText("Schlagzeile\n=========\nText"), "Schlagzeile\n\nText");
+  assert.equal(toPlainText("- Punkt\n    - Unterpunkt"), "• Punkt\n• Unterpunkt");
   // Normaler Text bleibt, wie er ist: Sternchen in Wörtern, Mathe, einzelne Zeichen, Emojis
   for (const s of ["🗞 Tag 3: Krieg 4 × 2", "Preis 5 * 3 = 15", "• schon ein Punkt", "Rüstung_2026 bleibt", "Sterne * hier"]) assert.equal(toPlainText(s), s);
 });
