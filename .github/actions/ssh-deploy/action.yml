@@ -1,0 +1,36 @@
+name: Befehl an den Server
+description: Schickt einen Befehl an deploy.sh auf dem Server. Der Schlüssel ist dort auf eine Umgebung festgelegt.
+inputs:
+  key:
+    description: Privater SSH-Schlüssel (Umgebungs-Secret DEPLOY_KEY)
+    required: true
+  host:
+    description: Server-Adresse (Variable DEPLOY_HOST)
+    required: true
+  user:
+    description: Benutzer auf dem Server (Variable DEPLOY_USER)
+    required: true
+  known-hosts:
+    description: Fingerabdruck des Servers (Variable DEPLOY_KNOWN_HOSTS)
+    required: true
+  command:
+    description: "deploy <commit> | rollback | copy-data | status"
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+        HOST: ${{ inputs.host }}
+        USER_NAME: ${{ inputs.user }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+        COMMAND: ${{ inputs.command }}
+      run: |
+        [ -n "$KEY" ] || { echo "::error::DEPLOY_KEY fehlt für diese Umgebung (Settings → Environments)"; exit 1; }
+        [ -n "$HOST" ] && [ -n "$USER_NAME" ] && [ -n "$KNOWN_HOSTS" ] || { echo "::error::DEPLOY_HOST, DEPLOY_USER oder DEPLOY_KNOWN_HOSTS fehlt (Settings → Secrets and variables → Variables)"; exit 1; }
+        dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT
+        printf '%s\n' "$KEY" > "$dir/key"; chmod 600 "$dir/key"
+        printf '%s\n' "$KNOWN_HOSTS" > "$dir/known_hosts"
+        ssh -i "$dir/key" -o IdentitiesOnly=yes -o UserKnownHostsFile="$dir/known_hosts" -o StrictHostKeyChecking=yes \
+          -o ServerAliveInterval=30 "$USER_NAME@$HOST" "$COMMAND"

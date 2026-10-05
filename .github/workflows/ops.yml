@@ -1,0 +1,89 @@
+# Handgriffe per Knopfdruck: Actions → „Betrieb“ → „Run workflow“.
+# Prod-Aktionen laufen nur von master aus (die Umgebung „production“ erlaubt nur master).
+name: Betrieb
+
+on:
+  workflow_dispatch:
+    inputs:
+      aktion:
+        description: Was soll passieren?
+        type: choice
+        options:
+          - Branch auf Staging
+          - Staging eine Version zurück
+          - Prod eine Version zurück
+          - Prod-Daten nach Staging kopieren
+          - Status anzeigen
+      branch:
+        description: "Nur für „Branch auf Staging“: welcher Branch?"
+        type: string
+        default: master
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    if: inputs.aktion == 'Branch auf Staging' || inputs.aktion == 'Staging eine Version zurück' || inputs.aktion == 'Status anzeigen'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://game-staging.paulsplaygroundvm.de
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.aktion == 'Branch auf Staging' && inputs.branch || github.ref }}
+      - if: inputs.aktion == 'Branch auf Staging'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: inputs.aktion == 'Branch auf Staging'
+        run: npm ci && npm run check && npm test
+      - id: cmd
+        env:
+          AKTION: ${{ inputs.aktion }}
+        run: |
+          case "$AKTION" in
+            "Branch auf Staging") echo "command=deploy $(git rev-parse HEAD)" >> "$GITHUB_OUTPUT" ;;
+            "Staging eine Version zurück") echo "command=rollback" >> "$GITHUB_OUTPUT" ;;
+            *) echo "command=status" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          key: ${{ secrets.DEPLOY_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          user: ${{ vars.DEPLOY_USER }}
+          known-hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          command: ${{ steps.cmd.outputs.command }}
+
+  production:
+    if: inputs.aktion == 'Prod eine Version zurück' || inputs.aktion == 'Prod-Daten nach Staging kopieren' || inputs.aktion == 'Status anzeigen'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://game.paulsplaygroundvm.de
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - id: cmd
+        env:
+          AKTION: ${{ inputs.aktion }}
+        run: |
+          case "$AKTION" in
+            "Prod eine Version zurück") echo "command=rollback" >> "$GITHUB_OUTPUT" ;;
+            "Prod-Daten nach Staging kopieren") echo "command=copy-data" >> "$GITHUB_OUTPUT" ;;
+            *) echo "command=status" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          key: ${{ secrets.DEPLOY_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          user: ${{ vars.DEPLOY_USER }}
+          known-hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          command: ${{ steps.cmd.outputs.command }}
