@@ -1,6 +1,6 @@
 // Kopf (Nation, Uhr, Reiter) und die Reiter Zeitung, Allianz, Ergebnis.
 import { T, esc, fmt } from "../util.js";
-import { goalText, nation, tag } from "../names.js";
+import { goalText, nation, responseName, tag } from "../names.js";
 import { clockPanel } from "../components.js";
 
 const C = T.client;
@@ -28,6 +28,7 @@ export function incomingBox(d) {
     if (c.leaked) parts.push(c.leaked > 1 ? (def ? C.incomingLeakAllDefector : C.incomingLeakAll) : (def ? C.incomingLeakDefector : C.incomingLeak));
     return fmt(C.incomingCard, vars) + (parts.length ? ": " + parts.join(", ") : "") + ".";
   });
+  if (inc.councilDebt) lines.push(inc.councilDebt === 1 ? C.incomingDebtOne : fmt(C.incomingDebt, { n: inc.councilDebt }));
   if (inc.accused) lines.push(inc.accused.correct ? C.incomingAccusedRight : C.incomingAccusedWrong);
   return `<section class="incoming" aria-label="${fmt(C.incomingTitle, { day: inc.day })}"><b>${fmt(C.incomingTitle, { day: inc.day })}</b>
     <ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></section>`;
@@ -48,6 +49,18 @@ export function paperTab(d) {
   return `<p class="hint">${d.cancelled ? C.noPaperCancelled : fmt(C.firstPaper, { hour: d.rules.resolveHour })}</p>`;
 }
 
+/**
+ * Warnung, bevor man sich arm überweist: Ratskosten zahlen alle, wenn eine Option beschlossen wird – egal wofür
+ * man gestimmt hat. Reicht der Rest nicht für die teuerste Option, kostet das Siegpunkte. Gesperrt wird nichts.
+ */
+export function transferWarning(d, amount) {
+  const n = Math.max(0, Math.floor(Number(amount) || 0));
+  const priciest = d.crisis.responses.reduce((a, r) => r.costEach > a.costEach ? r : a);
+  const short = priciest.costEach - (d.me.pkAfterCard - n);
+  if (short <= 0) return "";
+  return esc(fmt(short === 1 ? C.transferWarnOne : C.transferWarn, { response: responseName(d.crisis, priciest.id), cost: priciest.costEach, n: short }));
+}
+
 /** Überweisen (solange das Spiel läuft) und Logbuch. form: Eingaben, die ein Neuzeichnen überleben sollen. */
 function transferSection(d, form) {
   const others = d.players.filter(p => p.idx !== d.me.idx);
@@ -59,6 +72,7 @@ function transferSection(d, form) {
       <label class="field">${C.transferTo}<select name="to" data-local>${others.map(p => `<option value="${p.idx}" ${form.to === p.idx ? "selected" : ""}>${nation(p.nation)}</option>`).join("")}</select></label>
       <label class="field">${C.transferAmount}<input type="number" name="amount" data-local min="1" max="${d.me.freePk}" step="1" inputmode="numeric" value="${esc(form.amount ?? "")}"></label>
       <label class="field">${C.transferSubject}<input type="text" name="subject" data-local maxlength="${d.subjectMax}" value="${esc(form.subject ?? "")}" placeholder="${C.transferSubjectHint}"></label>
+      <p class="warn" id="transfer-warn" role="status">${transferWarning(d, form.amount)}</p>
       <button class="btn" type="submit" ${d.me.freePk < 1 ? "disabled" : ""}>${C.transferSend}</button>
       <p class="hint">${C.transferRules}</p>
     </form>`;

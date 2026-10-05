@@ -1,7 +1,7 @@
 // Was Spieler und Spielleitung sehen dürfen. Nur IDs und Zahlen; die Oberfläche setzt die Texte ein.
 // Geheimnisse anderer (Ziele, Siegpunkte, Angebote, Überläufer) bleiben verborgen, bis das Spiel endet.
 import { CONFIG } from "../config.ts";
-import { canDefect, canVeto, cardCost, clockTime, freePk, hasForesight, knowsAllGoals, minutesLeft, offerFor, reservedPk, SUBJECT_MAX, transferredToday } from "../engine/index.ts";
+import { canDefect, canVeto, cardCost, clockTime, freePk, hasForesight, knowsAllGoals, minutesLeft, offerFor, reservedPk, pkAfterCard, SUBJECT_MAX, transferredToday } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
 import { GOALS, cardById, cardTier } from "../rules/content.ts";
@@ -28,7 +28,8 @@ export function incomingFor(s: GameState, i: number) {
     };
   });
   const accused = r.accusation?.target === me ? { correct: r.accusation.correct } : null;
-  return cards.length || accused ? { day: r.day, cards, accused } : null;
+  const debt = s.players[i].councilDebt?.day === r.day ? s.players[i].councilDebt!.vp : null;
+  return cards.length || accused || debt ? { day: r.day, cards, accused, councilDebt: debt } : null;
 }
 
 const goalInfo = (ids: string[]) => ids.map(id => { const g = GOALS.find(x => x.id === id)!; return { id, kind: g.kind, vp: g.vp }; });
@@ -54,6 +55,8 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
       canDefect: canDefect(s, i),
       // Überweisungen: was frei ist und was der gespeicherte Zug reserviert
       reservedPk: reservedPk(s, i, moves[i]?.move), freePk: s.over ? 0 : freePk(s, i, moves[i]?.move),
+      // für die Warnung beim Überweisen: was nach der gespeicherten Karte voraussichtlich übrig ist
+      pkAfterCard: pkAfterCard(s, i, moves[i]?.move),
     },
     crisis: s.crisis,
     nextCrisis: hasForesight(p) ? s.nextCrisis : null,

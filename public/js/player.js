@@ -2,7 +2,7 @@
 import { $, $$, T, esc, fmt, api } from "./util.js";
 import { nation } from "./names.js";
 import { STEPS, startStep, stepsFor } from "./player/steps.js";
-import { allianceTab, header, incomingBox, intelBox, paperTab, resultTab } from "./player/tabs.js";
+import { allianceTab, header, incomingBox, intelBox, paperTab, resultTab, transferWarning } from "./player/tabs.js";
 import { renderIntro, seenIntro } from "./player/intro.js";
 import { dismissPush, enablePush, pushCard, pushState, syncPush } from "./player/push.js";
 
@@ -69,6 +69,7 @@ function bind(d, locked) {
   // Überweisung: Eingaben merken (überleben ein Neuzeichnen), absenden
   $$("#transfer [data-local]").forEach(el => el.addEventListener("input", () => {
     ui.transfer[el.name] = el.name === "to" ? Number(el.value) : el.value;
+    if (el.name === "amount") $("#transfer-warn").innerHTML = transferWarning(d, el.value); // live, ohne neu zu zeichnen
   }));
   $("#transfer")?.addEventListener("submit", e => { e.preventDefault(); sendTransfer(); });
   $$("#app input:not([data-local]), #app select:not([data-local])").forEach(el => el.addEventListener("change", () => {

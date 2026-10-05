@@ -141,7 +141,7 @@ test("Kasten „gegen dich“: Anklage zeigt nur richtig/falsch, nie die Ankläg
   const none = { vote: null, cardId: null };
   const s = newGame(5);
   const next = resolveDay(s, [none, { ...none, accuse: 0 }, { ...none, accuse: 0 }, none]); // Spieler 0 ist kein Überläufer
-  assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false } });
+  assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false }, councilDebt: null });
   for (const i of [1, 2, 3]) assert.equal(incomingFor(next, i), null, "Ankläger und Unbeteiligte sehen keinen Kasten");
 });
 
@@ -291,4 +291,24 @@ test("Überweisung bleibt geheim: andere sehen den Einfluss vom Tagesbeginn; Spa
   assert.throws(() => transfer(u, 0, { to: 2, amount: 1 }, null), (e: any) => e.code === "tooManyTransfers");
   assert.doesNotThrow(() => transfer(u, 1, { to: 0, amount: 1 }, null), "Grenze gilt je Absender");
   assert.equal(cleanSubject("a‮b​c⁦d"), "a b c d");
+});
+
+test("Ratskosten nicht bezahlbar: Siegpunkte weg, nur der Betroffene erfährt es; Rest nach der Karte für die Warnung", async () => {
+  const { pkAfterCard } = await import("../engine/index.ts");
+  const { incomingFor, playerView } = await import("../game/view.ts");
+  const s = newGame(43);
+  const opt = s.crisis.responses.filter(r => !r.unanimous && r.costEach > 0)[0] ?? s.crisis.responses.find(r => r.costEach > 0)!;
+  s.players[0].pk = 0; s.players[0].vp = 5;
+  s.players[0].hand = [{ id: "notstand", kind: "schmutzig", cost: 0, vp: 2, pk: 2, tracks: { autokratie: 1 } }];
+  assert.equal(pkAfterCard(s, 0, { vote: null, cardId: "notstand" }), 2, "Karte bringt Einfluss");
+  const votes = s.players.map(() => ({ vote: opt.id, cardId: null }));
+  const next = resolveDay(s, votes);
+  assert.equal(next.history.at(-1)!.passed, opt.id);
+  assert.deepEqual(next.players[0].councilDebt, { day: 1, vp: opt.costEach });
+  assert.equal(next.players[0].vp, 5 - opt.costEach);
+  assert.equal(incomingFor(next, 0)!.councilDebt, opt.costEach);
+  assert.equal(incomingFor(next, 1)?.councilDebt ?? null, null);
+  assert.ok(!JSON.stringify(next.history.at(-1)).includes("Debt"), "nicht im öffentlichen Bericht");
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any;
+  assert.ok(!("councilDebt" in playerView(next, 1, rows, [null, null, null, null], []).players[0]));
 });

@@ -155,3 +155,5 @@ button.tile:hover, button.tile:focus-visible { border-color: var(--amber); }
 .log { list-style: none; padding: 0; margin: 8px 0; }
 .log li { padding: 8px 0; border-bottom: 1px solid var(--rule); }
 .log .subject { color: var(--mute); font-style: italic; }
+.transfer .warn { color: var(--amber); font-size: .9rem; margin: 4px 0 10px; }
+.transfer .warn:empty { display: none; }

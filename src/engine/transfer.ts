@@ -17,6 +17,13 @@ export function reservedPk(s: GameState, i: number, move: Move | null | undefine
   return (card ? cardCost(p, card) : 0) + (vote?.costEach ?? 0);
 }
 
+/** Einfluss nach der gespeicherten Karte (Kosten ab, Einfluss-Gewinn der Karte dazu), vor den Ratskosten. */
+export function pkAfterCard(s: GameState, i: number, move: Move | null | undefined): number {
+  const p = s.players[i];
+  const card = move?.cardId ? p.hand.find(c => c.id === move.cardId) : undefined;
+  return p.pk - (card ? cardCost(p, card) - (card.pk ?? 0) : 0);
+}
+
 /** Was Spieler i heute verschenken darf, ohne seinen eigenen Zug zu gefährden. */
 export const freePk = (s: GameState, i: number, move: Move | null | undefined) => Math.max(0, s.players[i].pk - reservedPk(s, i, move));
 

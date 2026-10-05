@@ -22,6 +22,7 @@ export interface Player {
   exposed: boolean;
   vetoUsed: boolean;
   stats: PlayerStats;
+  councilDebt?: { day: number; vp: number }; // geheim: Ratskosten nicht bezahlbar, dafür Siegpunkte verloren
 }
 
 /** Öffentlicher Tagesbericht. Enthält keine Geheimnisse (Angebote ohne Käufer). */
