@@ -5,7 +5,7 @@ import { resetPassword } from "../../game/login.ts";
 import { cancelGame, resolveGame, updateSettings } from "../../game/service.ts";
 import { store } from "../../game/store.ts";
 import { adminView } from "../../game/view.ts";
-import { testAi } from "../../integrations/mistral.ts";
+import { testAi } from "../../integrations/ai.ts";
 import { HttpError, json, readBody } from "../respond.ts";
 
 export async function adminRoute(req: IncomingMessage, res: ServerResponse, key: string, action?: string) {
