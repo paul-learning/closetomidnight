@@ -11,13 +11,11 @@ export function lobbyRoute(res: ServerResponse) {
 
 export async function loginRoute(req: IncomingMessage, res: ServerResponse) {
   const who = clientAddress(req);
-  if (passwordAttempts.blocked(who)) throw new HttpError(429, T.errors.tooManyAttempts);
   const b = await readBody(req);
-  const r = login(b.who, b.password);
-  if (!r.ok) {
-    if (r.reason === "wrongPassword" || r.reason === "wrongSecret") passwordAttempts.fail(who);
-    throw new HttpError(r.reason === "noGame" ? 404 : 403, T.errors[r.reason]);
-  }
+  // Erst zählen, dann prüfen: So kommen auch gleichzeitige Anfragen nicht über die Grenze.
+  if (!passwordAttempts.tryAttempt(who)) throw new HttpError(429, T.errors.tooManyAttempts);
+  const r = await login(b.who, b.password);
+  if (!r.ok) throw new HttpError(r.reason === "noGame" ? 404 : 403, T.errors[r.reason]);
   passwordAttempts.reset(who);
   json(res, { url: r.url });
 }

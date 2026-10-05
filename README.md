@@ -55,13 +55,14 @@ Auf dem Server außerdem:
 ## Ein Spiel anlegen
 
 1. `BASE_URL` öffnen, Admin-Passwort und die vier Namen eingeben.
-2. Du landest auf der Spielleitung. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt; „Passwort erneuern“ erzeugt ein neues, das alte gilt dann nicht mehr.
+2. Du landest auf der Spielleitung. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt.
+   „Passwort erneuern“ sperrt jemanden aus: neues Passwort **und** neuer Link, angemeldete Geräte müssen sich neu anmelden, seine Benachrichtigungen werden abgeschaltet.
 3. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Du selbst meldest dich dort als „Spielleitung“ mit dem Admin-Passwort an.
 4. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin, falls jemand lieber den Link nimmt.
 5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
 6. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
 
-Die Startseite zeigt immer das zuletzt angelegte Spiel. Passwörter liegen nur als Hash (scrypt) in der Datenbank. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
+Die Startseite zeigt immer das zuletzt angelegte Spiel, ohne Anmeldung aber nur Nationen und Spieltag, keine Namen. Passwörter liegen nur als Hash (scrypt) in der Datenbank. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
 
 ## Benachrichtigungen und Zeitung teilen
 

@@ -25,8 +25,7 @@ function loginView(g) {
   const status = g.over ? C.gameOver : fmt(C.dayOf, { day: g.day, days: g.days });
   return `<p class="hint">${C.whoAreYou} · ${status}</p>
     <form id="login">
-      <div class="opts">${g.players.map(p => roleOption(p.idx, nation(p.nation),
-        [p.name !== nation(p.nation) && esc(p.name), !p.hasPassword && C.noPasswordYet].filter(Boolean).join(" · "))).join("")}
+      <div class="opts">${g.players.map(p => roleOption(p.idx, nation(p.nation), p.hasPassword ? "" : C.noPasswordYet)).join("")}
         ${roleOption("admin", C.adminTitle, "")}</div>
       <label class="field">${ui.who === "admin" ? C.adminSecret : C.password}
         <input type="password" id="password" autocomplete="current-password" autocapitalize="none" spellcheck="false"></label>
@@ -86,7 +85,18 @@ function bind(g) {
   });
 }
 
+// Gilt der gemerkte Link noch? Nach „Passwort erneuern“ nicht mehr – dann vergessen und neu anmelden lassen.
+async function dropStaleLogin(gameId) {
+  const last = remembered();
+  if (!last || last.gameId !== gameId) return;
+  try {
+    const res = await fetch("/api" + new URL(last.url, location.href).pathname);
+    if (res.status === 404) remember(null);
+  } catch {} // offline o. ä.: lieber behalten
+}
+
 export async function startStart() {
   ui.lobby = await api("/api/lobby");
+  if (ui.lobby.game) await dropStaleLogin(ui.lobby.game.id);
   render();
 }

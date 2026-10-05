@@ -7,10 +7,10 @@ import { HttpError, json, readBody } from "../respond.ts";
 
 export async function newGameRoute(req: IncomingMessage, res: ServerResponse) {
   const who = clientAddress(req);
-  if (passwordAttempts.blocked(who)) throw new HttpError(429, T.errors.tooManyAttempts);
   const b = await readBody(req);
+  if (!passwordAttempts.tryAttempt(who)) throw new HttpError(429, T.errors.tooManyAttempts);
   const check = checkAdminSecret(b.secret);
-  if (check !== "ok") { passwordAttempts.fail(who); throw new HttpError(403, T.errors[check]); }
+  if (check !== "ok") throw new HttpError(403, T.errors[check]);
   passwordAttempts.reset(who);
   const { adminKey } = createGame({ names: Array.isArray(b.names) ? b.names.map(String) : [], bots: !!b.bots });
   json(res, { adminUrl: adminUrl(adminKey) });

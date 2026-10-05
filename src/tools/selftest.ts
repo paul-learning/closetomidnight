@@ -86,11 +86,20 @@ test("Passwörter: Hash prüft richtig, Schreibweise egal, kein Klartext gespeic
   assert.notEqual(generatePassword(), pw);
   const h = hashPassword(pw);
   assert.ok(!h.includes(pw.replace(/-/g, "")));
-  assert.ok(verifyPassword(pw, h));
-  assert.ok(verifyPassword(` ${pw.toUpperCase().replace(/-/g, "")} `, h));
-  assert.ok(!verifyPassword(pw.slice(0, -1) + (pw.endsWith("a") ? "b" : "a"), h));
-  assert.ok(!verifyPassword(pw, null));
-  assert.ok(!verifyPassword(123, h));
-  assert.ok(!verifyPassword(pw, "kaputt"));
+  assert.ok(await verifyPassword(pw, h));
+  assert.ok(await verifyPassword(` ${pw.toUpperCase().replace(/-/g, "")} `, h));
+  assert.ok(!await verifyPassword(pw.slice(0, -1) + (pw.endsWith("a") ? "b" : "a"), h));
+  assert.ok(!await verifyPassword(pw, null));
+  assert.ok(!await verifyPassword(123, h));
+  assert.ok(!await verifyPassword(pw, "kaputt"));
   assert.notEqual(hashPassword(pw), h, "jeder Hash hat ein eigenes Salz");
+});
+
+test("Fehlversuche: auch gleichzeitige Anfragen kommen nicht über die Grenze", async () => {
+  const { failureLimiter } = await import("../http/rateLimit.ts");
+  const lim = failureLimiter(10, 60_000);
+  const allowed = (await Promise.all(Array.from({ length: 50 }, async () => { await null; return lim.tryAttempt("1.2.3.4"); }))).filter(Boolean).length;
+  assert.equal(allowed, 10);
+  lim.reset("1.2.3.4");
+  assert.ok(lim.tryAttempt("1.2.3.4"));
 });

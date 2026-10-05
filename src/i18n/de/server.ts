@@ -5,7 +5,7 @@ export const server = {
     needTarget: "Für diese Karte musst du ein Ziel wählen.",
     cannotDefect: "Überlaufen ist gerade nicht erlaubt.",
     tooExpensive: "Dafür reicht dein Einfluss nicht.",
-    badLink: "Diesen Spieler-Link gibt es nicht. Frag die Spielleitung nach deinem Link.",
+    badLink: "Dieser Spieler-Link gilt nicht (mehr). Melde dich auf der Startseite mit deinem Passwort an.",
     badAdminLink: "Diesen Admin-Link gibt es nicht.",
     wrongSecret: "Das Admin-Passwort stimmt nicht.",
     tooManyAttempts: "Zu viele falsche Versuche. Versuch es in 15 Minuten noch einmal.",

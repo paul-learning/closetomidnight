@@ -4,7 +4,7 @@ import { CONFIG } from "../config.ts";
 import type { GameState, Move } from "../engine/index.ts";
 
 export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null }
-export interface PlayerRow { token: string; gameId: string; idx: number; name: string }
+export interface PlayerRow { token: string; gameId: string; idx: number; name: string; hasPassword?: boolean }
 export interface SavedMove { move: Move; locked: boolean }
 export interface PushSub { endpoint: string; gameId: string; idx: number; p256dh: string; auth: string }
 
@@ -26,7 +26,8 @@ if (!(db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).some
 const toGame = (r: any): GameRow | undefined => r && {
   id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded,
 };
-const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name };
+// Der Hash selbst verlässt store.ts nur über passwordHash(), für die Anmeldung.
+const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name, hasPassword: r.pw_hash != null };
 
 export const store = {
   /** Führt fn ganz oder gar nicht aus. */
@@ -56,6 +57,7 @@ export const store = {
   passwordHash: (gameId: string, idx: number) =>
     (db.prepare("SELECT pw_hash FROM players WHERE game_id = ? AND idx = ?").get(gameId, idx) as { pw_hash: string | null } | undefined)?.pw_hash ?? null,
   setPasswordHash: (gameId: string, idx: number, hash: string) => db.prepare("UPDATE players SET pw_hash = ? WHERE game_id = ? AND idx = ?").run(hash, gameId, idx),
+  setPlayerToken: (gameId: string, idx: number, token: string) => db.prepare("UPDATE players SET token = ? WHERE game_id = ? AND idx = ?").run(token, gameId, idx),
   renamePlayer: (gameId: string, idx: number, name: string) => db.prepare("UPDATE players SET name = ? WHERE game_id = ? AND idx = ?").run(name, gameId, idx),
   moves(gameId: string, day: number): (SavedMove | null)[] {
     const rows = db.prepare("SELECT idx, move, locked FROM moves WHERE game_id = ? AND day = ?").all(gameId, day) as { idx: number; move: string; locked: number }[];
@@ -70,6 +72,7 @@ export const store = {
   savePushSub: (p: PushSub) => db.prepare("INSERT OR REPLACE INTO push_subs (endpoint, game_id, idx, p256dh, auth, created) VALUES (?, ?, ?, ?, ?, ?)")
     .run(p.endpoint, p.gameId, p.idx, p.p256dh, p.auth, Date.now()),
   deletePushSub: (endpoint: string) => db.prepare("DELETE FROM push_subs WHERE endpoint = ?").run(endpoint),
+  deletePushSubsOf: (gameId: string, idx: number) => db.prepare("DELETE FROM push_subs WHERE game_id = ? AND idx = ?").run(gameId, idx),
   pushSubs: (gameId: string) => (db.prepare("SELECT * FROM push_subs WHERE game_id = ?").all(gameId) as any[])
     .map(r => ({ endpoint: r.endpoint, gameId: r.game_id, idx: r.idx, p256dh: r.p256dh, auth: r.auth }) as PushSub),
   // ---- Server-Einstellungen (z. B. VAPID-Schlüssel) ----
