@@ -86,6 +86,10 @@ async function act(action, body) {
 
 export async function startAdmin(k) {
   key = k;
-  data = await api(`/api/a/${key}`);
+  const res = await fetch(`/api/a/${encodeURIComponent(key)}`);
+  // Ohne Anmeldung: zur Startseite, nach der Anmeldung als Spielleitung zurück hierher
+  if (res.status === 401) { location.href = `/?next=${encodeURIComponent(location.pathname)}`; return; }
+  data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
   render();
 }

@@ -32,7 +32,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 }
 
 export function startHttp() {
-  createServer(async (req, res) => {
+  return createServer(async (req, res) => {
     try { await route(req, res); }
     catch (e) {
       if (e instanceof RuleError) return json(res, { error: T.errors[e.code] }, 400);

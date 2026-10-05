@@ -1,13 +1,14 @@
 // /api/admin/… – Verwaltung aller Spiele. Nur mit Anmelde-Cookie der Spielleitung.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { T } from "../../i18n/index.ts";
-import { endAdminSession, isAdminSession } from "../../game/adminSession.ts";
+import { endAdminSession } from "../../game/adminSession.ts";
 import { gameHistory } from "../../game/history.ts";
 import { adminUrl, createGame } from "../../game/registration.ts";
 import { CannotDelete, cancelGame, deleteGame } from "../../game/service.ts";
 import { store } from "../../game/store.ts";
 import { BALANCE } from "../../rules/balance.ts";
 import { ADMIN_COOKIE, readCookie, setCookie } from "../cookies.ts";
+import { requireAdmin } from "../adminAuth.ts";
 import { HttpError, json, readBody, send } from "../respond.ts";
 
 function gameList() {
@@ -20,10 +21,8 @@ function gameList() {
 }
 
 export async function adminAreaRoute(req: IncomingMessage, res: ServerResponse, parts: string[]) {
+  requireAdmin(req);
   const session = readCookie(req, ADMIN_COOKIE);
-  if (!isAdminSession(session)) throw new HttpError(401, T.errors.notLoggedIn);
-  // Zusätzlich zu SameSite=Strict: Änderungen nur als JSON (ein fremdes Formular kann das nicht schicken)
-  if (req.method === "POST" && !String(req.headers["content-type"] ?? "").startsWith("application/json")) throw new HttpError(415, T.errors.badRequest);
   const [what, id, action] = parts;
   if (req.method === "POST" && what === "logout") {
     endAdminSession(session);

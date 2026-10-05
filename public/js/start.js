@@ -38,6 +38,7 @@ function loginForm(g) {
 
 function render() {
   const g = ui.lobby.game, last = remembered();
+  if (adminReturnPath() && ui.who === null) ui.who = "admin"; // kommt von einer Admin-Seite: Spielleitung vorauswählen
   if (!g && ui.who === null) ui.who = "admin"; // ohne Spiel gibt es nur die Spielleitung
   const showLast = last && (last.admin || (g && last.gameId === g.id));
   $("#app").innerHTML = `<header class="who"><h1>${C.title}</h1></header>
@@ -63,9 +64,15 @@ function bind(g) {
       remember(ui.who === "admin"
         ? { admin: true, url: r.url, label: C.adminTitle }
         : { gameId: g.id, url: r.url, label: nation(g.players[ui.who].nation) });
-      location.href = r.url;
+      location.href = ui.who === "admin" && adminReturnPath() || r.url;
     } catch (err) { go({ error: err.message }); }
   });
+}
+
+// Kam die Spielleitung von der Seite eines Spiels (/?next=/a/…)? Nur eigene Admin-Pfade, keine fremden Adressen.
+function adminReturnPath() {
+  const next = new URLSearchParams(location.search).get("next") ?? "";
+  return /^\/a\/[\w-]+$/.test(next) ? next : null;
 }
 
 // Gilt die gemerkte Anmeldung noch? Spieler: nach „Passwort erneuern“ nicht mehr. Spielleitung: Cookie abgelaufen.
