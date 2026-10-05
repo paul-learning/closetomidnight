@@ -7,6 +7,7 @@ import { T } from "../i18n/index.ts";
 import { HttpError, json } from "./respond.ts";
 import { serveStatic, serveStrings } from "./static.ts";
 import { adminRoute } from "./routes/admin.ts";
+import { lobbyRoute, loginRoute } from "./routes/login.ts";
 import { newGameRoute } from "./routes/newGame.ts";
 import { playerRoute } from "./routes/player.ts";
 
@@ -21,6 +22,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
   if (first === "api") {
     if (second === "new" && req.method === "POST") return newGameRoute(req, res);
+    if (second === "lobby" && req.method === "GET") return lobbyRoute(res);
+    if (second === "login" && req.method === "POST") return loginRoute(req, res);
     if (second === "p" && third) return playerRoute(req, res, third, fourth);
     if (second === "a" && third) return adminRoute(req, res, third, fourth);
   }

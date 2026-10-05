@@ -20,6 +20,8 @@ db.exec(`
 `);
 // Alte Datenbanken: ungenutzte Spalte aus einer früheren Version entfernen
 if ((db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "chat_id")) db.exec("ALTER TABLE games DROP COLUMN chat_id");
+// Passwörter für die Startseite (nur Hash, siehe game/passwords.ts)
+if (!(db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).some(c => c.name === "pw_hash")) db.exec("ALTER TABLE players ADD COLUMN pw_hash TEXT");
 
 const toGame = (r: any): GameRow | undefined => r && {
   id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded,
@@ -41,6 +43,8 @@ export const store = {
   },
   game: (id: string) => toGame(db.prepare("SELECT * FROM games WHERE id = ?").get(id)),
   gameByAdminKey: (key: string) => toGame(db.prepare("SELECT * FROM games WHERE admin_key = ?").get(key)),
+  /** Das zuletzt angelegte Spiel; die Startseite zeigt immer dieses. */
+  latestGame: () => toGame(db.prepare("SELECT * FROM games ORDER BY created DESC, rowid DESC LIMIT 1").get()),
   activeGames: () => db.prepare("SELECT * FROM games WHERE json_extract(state, '$.over') = 0").all().map(toGame) as GameRow[],
   player: (token: string) => toPlayer(db.prepare("SELECT * FROM players WHERE token = ?").get(token)),
   players: (gameId: string) => db.prepare("SELECT * FROM players WHERE game_id = ? ORDER BY idx").all(gameId).map(toPlayer) as PlayerRow[],
@@ -49,6 +53,9 @@ export const store = {
   },
   setReminded: (gameId: string, date: string) => db.prepare("UPDATE games SET last_reminded = ? WHERE id = ?").run(date, gameId),
   setBots: (gameId: string, on: boolean) => db.prepare("UPDATE games SET bots = ? WHERE id = ?").run(on ? 1 : 0, gameId),
+  passwordHash: (gameId: string, idx: number) =>
+    (db.prepare("SELECT pw_hash FROM players WHERE game_id = ? AND idx = ?").get(gameId, idx) as { pw_hash: string | null } | undefined)?.pw_hash ?? null,
+  setPasswordHash: (gameId: string, idx: number, hash: string) => db.prepare("UPDATE players SET pw_hash = ? WHERE game_id = ? AND idx = ?").run(hash, gameId, idx),
   renamePlayer: (gameId: string, idx: number, name: string) => db.prepare("UPDATE players SET name = ? WHERE game_id = ? AND idx = ?").run(name, gameId, idx),
   moves(gameId: string, day: number): (SavedMove | null)[] {
     const rows = db.prepare("SELECT idx, move, locked FROM moves WHERE game_id = ? AND day = ?").all(gameId, day) as { idx: number; move: string; locked: number }[];

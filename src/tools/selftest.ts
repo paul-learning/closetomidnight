@@ -78,3 +78,19 @@ test("zu teure Karte wird beim Speichern abgelehnt", () => {
   s.players[0].hand = [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }];
   assert.throws(() => validateMove(s, 0, { cardId: "gipfel" }), (e: unknown) => e instanceof RuleError && e.code === "tooExpensive");
 });
+
+test("Passwörter: Hash prüft richtig, Schreibweise egal, kein Klartext gespeichert", async () => {
+  const { generatePassword, hashPassword, verifyPassword } = await import("../game/passwords.ts");
+  const pw = generatePassword();
+  assert.match(pw, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+  assert.notEqual(generatePassword(), pw);
+  const h = hashPassword(pw);
+  assert.ok(!h.includes(pw.replace(/-/g, "")));
+  assert.ok(verifyPassword(pw, h));
+  assert.ok(verifyPassword(` ${pw.toUpperCase().replace(/-/g, "")} `, h));
+  assert.ok(!verifyPassword(pw.slice(0, -1) + (pw.endsWith("a") ? "b" : "a"), h));
+  assert.ok(!verifyPassword(pw, null));
+  assert.ok(!verifyPassword(123, h));
+  assert.ok(!verifyPassword(pw, "kaputt"));
+  assert.notEqual(hashPassword(pw), h, "jeder Hash hat ein eigenes Salz");
+});

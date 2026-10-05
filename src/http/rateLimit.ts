@@ -22,3 +22,6 @@ export function failureLimiter(maxFailures: number, windowMs: number) {
     reset(key: string) { failures.delete(key); },
   };
 }
+
+/** Gemeinsam für alle Passwörter (Anmeldung, Admin-Passwort beim Anlegen): 10 Fehlversuche je Adresse in 15 Minuten. */
+export const passwordAttempts = failureLimiter(10, 15 * 60_000);

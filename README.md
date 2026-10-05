@@ -48,17 +48,20 @@ Auf dem Server außerdem:
 - In `.env`: ein langes, zufälliges `ADMIN_SECRET` (z. B. `openssl rand -base64 24`), `BASE_URL` mit https und `TRUST_PROXY=1`.
 - `chmod 600 .env` – nur du darfst die Schlüssel lesen.
 - Schlüssel tauschen: `.env` ändern, dann `docker compose up -d`.
-- Nach fünf falschen Admin-Passwörtern ist die Adresse für 15 Minuten gesperrt.
+- Nach zehn falschen Passwörtern (Spieler oder Admin) ist die Adresse für 15 Minuten gesperrt.
 - Sicherung, z. B. nächtlich per cron: `sqlite3 data/fvz.sqlite ".backup data/backup-$(date +%F).sqlite"`
 - Ob die KI-Zeitung funktioniert und wie viele Spieler Benachrichtigungen aktiviert haben, zeigt die Spielleitung unter „Verbindungen“.
 
 ## Ein Spiel anlegen
 
 1. `BASE_URL` öffnen, Admin-Passwort und die vier Namen eingeben.
-2. Du landest auf der Spielleitung. Den Admin-Link gut aufheben.
-3. Jedem Spieler nur seinen eigenen Link schicken.
-4. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen. Wird ein Spiel ab 18:00 angelegt, läuft Tag 1 bis zum nächsten Abend.
-5. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
+2. Du landest auf der Spielleitung. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt; „Passwort erneuern“ erzeugt ein neues, das alte gilt dann nicht mehr.
+3. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Du selbst meldest dich dort als „Spielleitung“ mit dem Admin-Passwort an.
+4. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin, falls jemand lieber den Link nimmt.
+5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
+6. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
+
+Die Startseite zeigt immer das zuletzt angelegte Spiel. Passwörter liegen nur als Hash (scrypt) in der Datenbank. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
 
 ## Benachrichtigungen und Zeitung teilen
 
@@ -82,7 +85,7 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/i18n/` | Alle sichtbaren Texte. `de/content.ts` (Inhaltsnamen), `de/client.ts` (Oberfläche), `de/newspaper.ts` (Zeitung, KI-Auftrag), `de/server.ts` (Fehler, Benachrichtigungen). |
 | `src/engine/` | Reine Spiellogik, kein Text, keine Datenbank, kein Netz. `state.ts` (Zustand, Abfragen), `setup.ts` (Spielstart, Angebote austeilen), `phases.ts` (Phasen eines Tages), `resolve.ts` (Ablauf eines Tages), `scoring.ts` (Spielende), `validate.ts` (Zugprüfung), `index.ts` (einzige Schnittstelle nach außen). |
 | `src/bots/` | Bot-Spieler (Simulator und Ersatz für fehlende Züge). |
-| `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
+| `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
 | `src/integrations/` | Außenwelt: `mistral.ts`, `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
 | `src/http/` | `server.ts` (Routing, Fehler), `routes/` (eine Datei je Bereich), `respond.ts`, `static.ts`, `rateLimit.ts`. |
