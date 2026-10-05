@@ -70,7 +70,7 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     if (c.sanction && target) target.vp -= c.sanction;
     if (c.leak && target) {
       const goal = target.goals.find(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
-      if (goal) p.intel.push({ nation: target.nation, goal });
+      if (goal) p.intel.push({ nation: target.nation, goal, day: rep.day });
     }
     rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined, ...(stolen !== undefined ? { stolen } : {}) });
   }

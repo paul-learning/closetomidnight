@@ -16,7 +16,7 @@ export interface Player {
   vp: number;
   hand: Card[];
   goals: string[]; // Ziel-IDs
-  intel: { nation: NationId; goal: string }[]; // per Leak aufgedeckte Ziele anderer
+  intel: { nation: NationId; goal: string; day?: number }[]; // per Leak aufgedeckte Ziele anderer; day: Tag des Leaks (fehlt in alten Spielständen)
   defector: boolean;
   exposed: boolean;
   vetoUsed: boolean;

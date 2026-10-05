@@ -1,6 +1,6 @@
 // Kopf (Nation, Uhr, Reiter) und die Reiter Zeitung, Allianz, Ergebnis.
 import { T, esc, fmt } from "../util.js";
-import { goalText, nation } from "../names.js";
+import { goalText, nation, tag } from "../names.js";
 import { clockPanel } from "../components.js";
 
 const C = T.client;
@@ -26,6 +26,16 @@ export function incomingBox(d) {
   if (inc.accused) lines.push(inc.accused.correct ? C.incomingAccusedRight : C.incomingAccusedWrong);
   return `<section class="incoming" aria-label="${fmt(C.incomingTitle, { day: inc.day })}"><b>${fmt(C.incomingTitle, { day: inc.day })}</b>
     <ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></section>`;
+}
+
+/** Kasten „Dein Geheimdienst meldet“: was der eigene Leak am zuletzt aufgelösten Tag aufgedeckt hat. */
+export function intelBox(d) {
+  const news = d.me.intelNew ?? [];
+  if (!news.length || d.cancelled) return "";
+  const title = fmt(C.intelNewTitle, { day: news[0].day });
+  return `<section class="intel-new" aria-label="${esc(title)}"><b>${esc(title)}</b>
+    <ul>${news.map(x => `<li>${tag(x.kind)}${esc(fmt(C.intelLine, { nation: nation(x.nation), goal: goalText(x) }))}</li>`).join("")}</ul>
+    <p class="hint">${C.intelNewHint}</p></section>`;
 }
 
 export function paperTab(d) {

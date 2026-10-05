@@ -177,6 +177,25 @@ test("Leak: Spieler, deren Ziele man schon alle kennt, sind kein Ziel mehr (Rege
   }
 });
 
+test("Leak: das aufgedeckte Ziel steht am nächsten Tag im Kasten, danach nur noch in der Akte", async () => {
+  const { playerView } = await import("../game/view.ts");
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any, view = (s: any, i: number) => playerView(s, i, rows, [null, null, null, null], []);
+  const s = newGame(23);
+  s.players[0].hand = [{ id: "leak", kind: "interaktion", cost: 2, leak: true }];
+  s.players[0].intel.push({ nation: s.players[3].nation, goal: "altes-ziel" }); // alter Spielstand ohne Tag
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(s, [{ ...none, cardId: "leak", target: 1 }, none, none, none]);
+  const learned = next.players[0].intel.at(-1)!;
+  assert.equal(learned.nation, next.players[1].nation);
+  assert.equal(learned.day, s.day);
+  const goal = GOALS.find(g => g.id === learned.goal)!;
+  assert.deepEqual(view(next, 0).me.intelNew, [{ id: goal.id, kind: goal.kind, vp: goal.vp, nation: learned.nation, day: s.day }]);
+  assert.deepEqual(view(next, 1).me.intelNew, [], "nur der Spieler, der geleakt hat");
+  const later = resolveDay(next, [none, none, none, none]);
+  if (!later.over) assert.deepEqual(view(later, 0).me.intelNew, [], "am Tag danach nicht mehr");
+  assert.equal(view(later, 0).me.intel.length, 2, "in der Akte bleibt alles");
+});
+
 test("Kartenstapel: Interaktionskarten häufig genug", () => {
   const total = CARD_POOL.reduce((n, [, k]) => n + k, 0);
   const inter = CARD_POOL.filter(([c]) => c.kind === "interaktion").reduce((n, [, k]) => n + k, 0);

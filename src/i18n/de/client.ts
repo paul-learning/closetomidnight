@@ -31,6 +31,8 @@ export const client = {
     yourGoals: "Deine geheimen Ziele, am Ende gibt es dafür Siegpunkte:",
     intel: "Dein Geheimdienst weiß:",
     intelLine: "{nation} verfolgt: {goal}",
+    intelNewTitle: "Tag {day}: Dein Geheimdienst meldet",
+    intelNewHint: "Steht ab jetzt auch in deiner Akte.",
     veto: "Veto einlegen.", vetoText: "Kippt heute jeden Ratsbeschluss. Einmal pro Spiel.",
     accuseTitle: "Misstrauensvotum",
     // Was dir am letzten Tag angetan wurde
