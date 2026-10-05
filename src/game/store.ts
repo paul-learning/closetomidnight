@@ -21,6 +21,9 @@ db.exec(`
 `);
 // Alte Datenbanken: ungenutzte Spalte aus einer früheren Version entfernen
 if ((db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "chat_id")) db.exec("ALTER TABLE games DROP COLUMN chat_id");
+// Anmeldungen der Spielleitung aus einer Vorversion ohne Passwort-Fingerabdruck: Spalte ergänzen.
+// Solche alten Anmeldungen (secret_fp leer) gelten nicht mehr; einmal neu anmelden.
+if (!(db.prepare("PRAGMA table_info(admin_sessions)").all() as { name: string }[]).some(c => c.name === "secret_fp")) db.exec("ALTER TABLE admin_sessions ADD COLUMN secret_fp TEXT");
 // Abgebrochene Spiele: laufen nicht weiter, die Startseite behandelt sie wie „kein Spiel“
 if (!(db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "cancelled")) db.exec("ALTER TABLE games ADD COLUMN cancelled INTEGER DEFAULT 0");
 // Passwörter für die Startseite (nur Hash, siehe game/passwords.ts)
