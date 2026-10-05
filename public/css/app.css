@@ -146,5 +146,12 @@ button.tile:hover, button.tile:focus-visible { border-color: var(--amber); }
 .copy { display: flex; gap: 8px; margin: 6px 0 14px; }
 .copy input { flex: 1; min-width: 0; padding: 8px; background: var(--steel-2); color: var(--text); border: 1px solid var(--rule); border-radius: 2px; font-size: .85rem; }
 .field { display: block; margin: 10px 0; }
-.field input[type=text], .field input[type=password] { width: 100%; padding: 10px; background: var(--steel-2); color: var(--text); border: 1px solid var(--rule); border-radius: 2px; }
+.field input[type=text], .field input[type=password], .field input[type=number], .field select { width: 100%; padding: 10px; background: var(--steel-2); color: var(--text); border: 1px solid var(--rule); border-radius: 2px; }
 @media (prefers-reduced-motion: no-preference) { .hand { transition: transform .8s cubic-bezier(.2,.8,.2,1); } }
+
+/* Überweisungen und Logbuch (Reiter Allianz) */
+.transfer { margin-bottom: 8px; }
+.notice { border: 1px solid var(--olive); border-radius: 3px; padding: 10px 12px; margin: 12px 0; background: #26301f; }
+.log { list-style: none; padding: 0; margin: 8px 0; }
+.log li { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.log .subject { color: var(--mute); font-style: italic; }

@@ -12,6 +12,7 @@ export function plainSummary(s: GameState, r: DayReport): string {
   for (const [n, v] of Object.entries(r.votes)) lines.push(fmt(P.voted, { nation: nation(n as NationId), response: responseName(r.crisis, v!) }));
   for (const c of r.cards) lines.push(fmt(c.target ? P.playedAgainst : P.played, { nation: nation(c.nation), card: T.cards[c.card] ?? c.card, target: c.target ? nation(c.target) : "" }) + (c.blocked ? ` ${P.blocked}` : ""));
   for (const o of r.offersTaken) lines.push(fmt(P.rumour, { power: power(o) }));
+  if (r.transferred) lines.push(fmt(P.transferred, { n: r.transferred }));
   if (r.accusation) lines.push(fmt(r.accusation.correct ? P.exposed : P.falseSuspicion, { nation: nation(r.accusation.target) }));
   lines.push("", fmt(P.clock, { time: time(s, r), ...r.tracksAfter }));
   if (s.over) {

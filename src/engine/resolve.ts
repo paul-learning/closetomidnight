@@ -23,6 +23,7 @@ export function resolveDay(prev: GameState, moves: Move[]): GameState {
   offers(s, moves, rep);
   accusation(s, moves, rep);
   drift(s, rnd);
+  rep.transferred = (s.transfers ?? []).filter(t => t.day === s.day).reduce((n, t) => n + t.amount, 0);
 
   rep.tracksAfter = { ...s.tracks };
   s.history.push(rep);

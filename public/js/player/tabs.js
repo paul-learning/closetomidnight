@@ -48,10 +48,27 @@ export function paperTab(d) {
   return `<p class="hint">${d.cancelled ? C.noPaperCancelled : fmt(C.firstPaper, { hour: d.rules.resolveHour })}</p>`;
 }
 
-export function allianceTab(d) {
+/** Überweisen (solange das Spiel läuft) und Logbuch. form: Eingaben, die ein Neuzeichnen überleben sollen. */
+function transferSection(d, form) {
+  const others = d.players.filter(p => p.idx !== d.me.idx);
+  const log = d.transfers.length
+    ? `<ul class="log">${d.transfers.map(t => `<li><span class="hint">${fmt(C.dayShort, { day: t.day })}</span> ${esc(fmt(t.out ? C.transferOut : C.transferIn, { nation: nation(t.nation), amount: t.amount }))}${t.subject ? `<br><span class="subject">„${esc(t.subject)}“</span>` : ""}</li>`).join("")}</ul>`
+    : `<p class="hint">${C.logEmpty}</p>`;
+  const sendForm = d.over || d.cancelled ? "" : `<form id="transfer" class="transfer">
+      <p class="hint">${fmt(C.transferHint, { free: `<b>${d.me.freePk}</b>`, reserved: d.me.reservedPk })}</p>
+      <label class="field">${C.transferTo}<select name="to" data-local>${others.map(p => `<option value="${p.idx}" ${form.to === p.idx ? "selected" : ""}>${nation(p.nation)}</option>`).join("")}</select></label>
+      <label class="field">${C.transferAmount}<input type="number" name="amount" data-local min="1" max="${d.me.freePk}" step="1" inputmode="numeric" value="${esc(form.amount ?? "")}"></label>
+      <label class="field">${C.transferSubject}<input type="text" name="subject" data-local maxlength="${d.subjectMax}" value="${esc(form.subject ?? "")}" placeholder="${C.transferSubjectHint}"></label>
+      <button class="btn" type="submit" ${d.me.freePk < 1 ? "disabled" : ""}>${C.transferSend}</button>
+      <p class="hint">${C.transferRules}</p>
+    </form>`;
+  return `<h2>${C.transferTitle}</h2>${sendForm}<h3>${C.logTitle}</h3>${log}`;
+}
+
+export function allianceTab(d, form = {}) {
   return `<table class="table">${d.players.map(p => `<tr><td><b>${nation(p.nation)}</b> · ${esc(p.playerName)}${p.idx === d.me.idx ? ` ${C.you}` : ""}<br>
     <span class="hint">${p.pk} ${C.influence}</span></td><td class="${p.locked ? "ok" : ""}">${d.over ? "" : p.locked ? C.isLocked : C.isThinking}</td></tr>`).join("")}</table>
-    <p class="hint">${C.secretPoints}</p>`;
+    <p class="hint">${C.secretPoints}</p>${transferSection(d, form)}`;
 }
 
 export function resultTab(d) {

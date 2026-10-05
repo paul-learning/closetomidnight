@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { CONFIG } from "../config.ts";
 import { RuleError } from "../engine/index.ts";
 import { T } from "../i18n/index.ts";
-import { GameCancelled } from "../game/service.ts";
+import { GameCancelled, Resolving } from "../game/service.ts";
 import { HttpError, json } from "./respond.ts";
 import { serveStatic, serveStrings } from "./static.ts";
 import { adminRoute } from "./routes/admin.ts";
@@ -37,6 +37,7 @@ export function startHttp() {
     catch (e) {
       if (e instanceof RuleError) return json(res, { error: T.errors[e.code] }, 400);
       if (e instanceof GameCancelled) return json(res, { error: T.errors.cancelled }, 409);
+      if (e instanceof Resolving) return json(res, { error: T.errors.resolving }, 409);
       if (e instanceof HttpError) return json(res, { error: e.message }, e.status);
       console.error(e);
       json(res, { error: T.errors.badRequest }, 500);

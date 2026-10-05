@@ -1,7 +1,7 @@
 // Spielablauf: Züge speichern, Tage auflösen, Zeitung verteilen. Verbindet Engine, Speicher und Integrationen.
-import { resolveDay, validateMove } from "../engine/index.ts";
+import { resolveDay, transfer, validateMove } from "../engine/index.ts";
 import { botMove } from "../bots/bots.ts";
-import { notifyNewEdition } from "./notifications.ts";
+import { notifyNewEdition, notifyTransfer } from "./notifications.ts";
 import { writePaper } from "../newspaper/paper.ts";
 import { store } from "./store.ts";
 import type { GameRow } from "./store.ts";
@@ -16,6 +16,21 @@ export function saveMove(game: GameRow, idx: number, input: unknown, lock: boole
 }
 
 const resolving = new Set<string>(); // verhindert doppelte Auflösung (Zeitplan + Knopf gleichzeitig)
+
+export class Resolving extends Error {}
+
+/**
+ * Einfluss an einen anderen Spieler überweisen, sofort. Reserviert bleibt, was der gespeicherte Zug braucht.
+ * Läuft gerade die Auflösung, wird abgelehnt: Sie hat den Zustand schon gelesen und würde die Überweisung überschreiben.
+ * Alles hier ist synchron, eine Auflösung kann also nicht mittendrin beginnen.
+ */
+export function sendTransfer(game: GameRow, idx: number, input: unknown) {
+  if (game.cancelled) throw new GameCancelled();
+  if (resolving.has(game.id)) throw new Resolving();
+  const next = transfer(game.state, idx, input, store.moves(game.id, game.state.day)[idx]?.move);
+  store.updateState(game.id, next);
+  notifyTransfer(game.id, next.transfers!.at(-1)!, next).catch(() => {}); // Benachrichtigung ist nett, aber nicht nötig
+}
 
 export async function resolveGame(gameId: string): Promise<void> {
   if (resolving.has(gameId)) return;

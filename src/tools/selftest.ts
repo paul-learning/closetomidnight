@@ -243,3 +243,35 @@ test("Doppelagent deckt beide Ziele auf, Grundeinkommen gibt allen Einfluss", ()
   assert.equal(next.players[0].pk, 0 + 3 + 3);
 });
 
+
+test("Überweisung: sofort, nur freier Einfluss, Betreff bereinigt, Tagessumme öffentlich", async () => {
+  const { transfer, freePk } = await import("../engine/index.ts");
+  const s = newGame(41);
+  s.players[0].pk = 10;
+  const card = { id: "gipfel", kind: "sauber" as const, cost: 3, vp: 2, tracks: { krieg: -2 } };
+  s.players[0].hand = [card];
+  const vote = s.crisis.responses.find(r => r.costEach > 0)!;
+  const move = { vote: vote.id, cardId: "gipfel" };
+  assert.equal(freePk(s, 0, move), 10 - 3 - vote.costEach);
+  assert.throws(() => transfer(s, 0, { to: 1, amount: freePk(s, 0, move) + 1 }, move), (e: any) => e.code === "notEnoughFree");
+  for (const bad of [{ to: 0, amount: 1 }, { to: 4, amount: 1 }, { to: 1, amount: 0 }, { to: 1, amount: 1.5 }, { to: "1", amount: 1 }])
+    assert.throws(() => transfer(s, 0, bad, move), (e: any) => e.code === "badTransfer", JSON.stringify(bad));
+  const after = transfer(s, 0, { to: 2, amount: 2, subject: "  für\\n deine\u0007 Stimme  " + "x".repeat(80) }, move);
+  assert.equal(after.players[0].pk, 8);
+  assert.equal(after.players[2].pk, s.players[2].pk + 2);
+  assert.equal(s.players[0].pk, 10, "alter Zustand unverändert");
+  const t = after.transfers![0];
+  assert.equal(t.day, 1); assert.equal(t.subject.length, 60); assert.ok(!/[\u0000-\u001f]/.test(t.subject));
+  // Ohne gespeicherten Zug ist alles frei
+  assert.equal(freePk(s, 0, null), 10);
+  const two = transfer(after, 1, { to: 0, amount: 1 }, null);
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(two, [none, none, none, none]);
+  assert.equal(next.history.at(-1)!.transferred, 3);
+  assert.equal(resolveDay(next, [none, none, none, none]).history.at(-1)!.transferred ?? 0, 0, "am nächsten Tag zählt nur der neue Tag");
+  // Logbuch in der Spieleransicht: nur eigene Überweisungen
+  const { playerView } = await import("../game/view.ts");
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any, view = (i: number) => playerView(two, i, rows, [null, null, null, null], []);
+  assert.deepEqual(view(0).transfers.map(x => [x.out, x.nation, x.amount]), [[false, two.players[1].nation, 1], [true, two.players[2].nation, 2]]);
+  assert.deepEqual(view(3).transfers, []);
+});

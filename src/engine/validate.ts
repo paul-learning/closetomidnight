@@ -2,7 +2,7 @@
 import { canDefect, canVeto, cardCost, offerFor, knowsAllGoals } from "./state.ts";
 import type { GameState, Move } from "./state.ts";
 
-export type RuleErrorCode = "gameOver" | "needTarget" | "cannotDefect" | "tooExpensive" | "leakKnown";
+export type RuleErrorCode = "gameOver" | "needTarget" | "cannotDefect" | "tooExpensive" | "leakKnown" | "badTransfer" | "notEnoughFree";
 export class RuleError extends Error {
   code: RuleErrorCode;
   constructor(code: RuleErrorCode) { super(code); this.code = code; }
