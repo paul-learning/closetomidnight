@@ -111,7 +111,7 @@ test("fällt die KI aus, erscheint der Tag trotzdem – mit der schlichten Zusam
 test("Einstellungen: Voreinstellungen", () => {
   const g = resolveAiConfig({ AI_PROVIDER: "gemini", AI_API_KEY: "k" });
   assert.equal(g.baseUrl, "https://generativelanguage.googleapis.com/v1beta/openai");
-  assert.equal(g.model, "gemini-3.8-flash");
+  assert.equal(g.model, "gemini-3.5-flash-lite");
   assert.deepEqual(g.extraBody, { reasoning_effort: "low" });
   assert.equal(g.problem, null);
   assert.equal(resolveAiConfig({ AI_PROVIDER: "GEMINI", AI_API_KEY: "k", AI_MODEL: "gemini-3.5-flash-lite" }).model, "gemini-3.5-flash-lite");
@@ -132,7 +132,7 @@ test("Einstellungen: alte Mistral-.env und Mischungen", () => {
   assert.notEqual(mixed.baseUrl, "https://api.mistral.ai/v1");
   // Anderer Anbieter: alte Mistral-Werte bleiben außen vor
   const gemini = resolveAiConfig({ AI_PROVIDER: "gemini", MISTRAL_API_KEY: "m", MISTRAL_MODEL: "mistral-large-latest" });
-  assert.deepEqual([gemini.apiKey, gemini.model, gemini.problem], ["", "gemini-3.8-flash", "noKey"]);
+  assert.deepEqual([gemini.apiKey, gemini.model, gemini.problem], ["", "gemini-3.5-flash-lite", "noKey"]);
 });
 
 test("Einstellungen: Lücken werden einzeln benannt", () => {
