@@ -18,7 +18,7 @@ function moveTab(d, locked) {
 
 function bar(d, locked) {
   const el = $("#bar");
-  if (d.over || ui.tab !== "zug") { el.hidden = true; return; }
+  if (d.over || d.cancelled || ui.tab !== "zug") { el.hidden = true; return; }
   const steps = stepsFor(d), last = ui.step === steps.length - 1;
   el.hidden = false;
   el.innerHTML = locked
@@ -34,8 +34,9 @@ function render() {
   if (ui.intro >= 0) return renderIntro(ui.intro, d.rules, p => { ui.intro = p; render(); }, () => { ui.intro = -1; render(); });
   const locked = d.myMove?.locked && !ui.draft._editing;
   ui.step = Math.min(ui.step, stepsFor(d).length - 1);
-  const body = ui.tab === "zeitung" ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d) : d.over ? resultTab(d) : moveTab(d, locked);
-  $("#app").innerHTML = header(d, ui.tab) + pushCard(ui.push) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
+  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d) : d.over ? resultTab(d) : moveTab(d, locked);
+  const notice = d.cancelled ? `<div class="err" role="status">${C.cancelledPlayer} <a class="link" href="/">${C.toStart}</a></div>` : "";
+  $("#app").innerHTML = header(d, ui.tab) + notice + (d.cancelled ? "" : pushCard(ui.push)) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
   bar(d, locked);
   bind(d, locked);
 }
@@ -94,7 +95,11 @@ async function save(lock) {
           ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : editing };
           if (lock) ui.step = 0;
         }
-      } catch (e) { ui.error = e.message; }
+      } catch (e) {
+        ui.error = e.message;
+        // Stand neu laden (z. B. Spiel inzwischen abgebrochen oder neuer Tag); den Entwurf behalten
+        ui.data = await api(`/api/p/${ui.key}`).catch(() => ui.data);
+      }
       if (!queued) break;
       lock = queued.lock; queued = null;
       if (!lock && awaitingTarget(ui.data, ui.draft)) break;
@@ -110,11 +115,16 @@ export async function startPlayer(key) {
     ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) };
     render();
   };
-  if (!seenIntro()) ui.intro = 0;
-  syncPush(key).catch(() => {}); // still im Hintergrund, die Seite wartet nicht darauf
+  const first = api(`/api/p/${key}`); // parallel zur Push-Abfrage
   ui.push = await pushState().catch(() => "hidden");
   if (ui.push === "on" || ui.push === "unsupported") ui.push = "hidden";
-  await load();
+  const cancelled = (await first).cancelled;
+  // Abgebrochenes Spiel: keine automatische Einführung, kein Push-Abgleich (sonst wanderte das Abo vom neuen Spiel hierher)
+  if (!seenIntro() && !cancelled) ui.intro = 0;
+  if (!cancelled) syncPush(key).catch(() => {}); // still im Hintergrund, die Seite wartet nicht darauf
+  ui.data = await first;
+  ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) };
+  render();
   // Bei Rückkehr zur Seite neu laden (neuer Tag, andere Spieler), aber nicht mitten im Bearbeiten
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !ui.draft?._editing && ui.intro < 0) load().catch(() => {}); });
 }

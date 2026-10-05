@@ -8,7 +8,10 @@ import { writePaper } from "../newspaper/paper.ts";
 import { store } from "./store.ts";
 import { localNow } from "./time.ts";
 
+export class GameCancelled extends Error {}
+
 export function saveMove(game: GameRow, idx: number, input: unknown, lock: boolean) {
+  if (game.cancelled) throw new GameCancelled();
   const move = validateMove(game.state, idx, input);
   store.saveMove(game.id, game.state.day, idx, move, lock);
 }
@@ -20,19 +23,25 @@ export async function resolveGame(gameId: string): Promise<void> {
   resolving.add(gameId);
   try {
     const game = store.game(gameId);
-    if (!game || game.state.over) return;
+    if (!game || game.state.over || game.cancelled) return;
     const s = game.state;
     const saved = store.moves(gameId, s.day);
     const moves = s.players.map((_, i) => saved[i]?.move ?? (game.bots ? botMove(s, i, "taktiker", Math.random) : { vote: null, cardId: null }));
     const next = resolveDay(s, moves);
-    store.saveState(gameId, next, localNow().date);
     const report = next.history.at(-1)!;
-    const text = await writePaper(next, report);
-    store.savePaper(gameId, report.day, text);
+    const text = await writePaper(next, report); // kann dauern (KI)
+    // Während die Zeitung entstand, abgebrochen? Dann nichts speichern und niemanden benachrichtigen.
+    if (store.isCancelled(gameId)) return;
+    store.transaction(() => { store.saveState(gameId, next, localNow().date); store.savePaper(gameId, report.day, text); });
     await notifyNewEdition(gameId, next);
   } finally {
     resolving.delete(gameId);
   }
+}
+
+/** Spiel abbrechen: keine Auflösung, keine Erinnerungen, keine Züge mehr. Lässt sich nicht rückgängig machen. */
+export function cancelGame(gameId: string) {
+  store.cancelGame(gameId);
 }
 
 /** Einstellungen der Spielleitung übernehmen; Unbekanntes wird ignoriert. */

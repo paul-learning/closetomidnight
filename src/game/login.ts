@@ -8,7 +8,7 @@ import { generatePassword, hashPassword, verifyPassword } from "./passwords.ts";
 /** Öffentlich (ohne Anmeldung): nur Nationen, Spielstand und ob ein Passwort gesetzt ist. Keine Namen, keine Links. */
 export function lobby() {
   const g = store.latestGame();
-  if (!g) return { game: null };
+  if (!g || g.cancelled) return { game: null };
   return {
     game: {
       id: g.id, day: g.state.day, days: BALANCE.days, over: g.state.over,
@@ -22,7 +22,7 @@ export type LoginResult = { ok: true; url: string } | { ok: false; reason: "noGa
 /** who: Spielernummer 0–3 oder "admin". */
 export async function login(who: unknown, password: unknown): Promise<LoginResult> {
   const g = store.latestGame();
-  if (!g) return { ok: false, reason: "noGame" };
+  if (!g || g.cancelled) return { ok: false, reason: "noGame" };
   if (who === "admin") {
     const check = checkAdminSecret(password);
     return check === "ok" ? { ok: true, url: adminUrl(g.adminKey) } : { ok: false, reason: check };

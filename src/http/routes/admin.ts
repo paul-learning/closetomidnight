@@ -2,7 +2,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { T } from "../../i18n/index.ts";
 import { resetPassword } from "../../game/login.ts";
-import { resolveGame, updateSettings } from "../../game/service.ts";
+import { cancelGame, resolveGame, updateSettings } from "../../game/service.ts";
 import { store } from "../../game/store.ts";
 import { adminView } from "../../game/view.ts";
 import { testAi } from "../../integrations/mistral.ts";
@@ -14,6 +14,7 @@ export async function adminRoute(req: IncomingMessage, res: ServerResponse, key:
   if (req.method === "POST") {
     if (action === "resolve") await resolveGame(g.id);
     if (action === "settings") updateSettings(g.id, await readBody(req));
+    if (action === "cancel") cancelGame(g.id);
     if (action === "test-ai") return json(res, { test: await testAi() });
     if (action === "password") {
       const idx = Number((await readBody(req)).idx), password = resetPassword(g.id, idx);
@@ -22,5 +23,5 @@ export async function adminRoute(req: IncomingMessage, res: ServerResponse, key:
     }
   }
   const fresh = store.game(g.id)!;
-  json(res, { ...adminView(fresh.state, fresh, store.players(g.id), store.moves(g.id, fresh.state.day), store.papers(g.id)), newPassword });
+  json(res, { ...adminView(fresh.state, fresh, store.players(g.id), store.moves(g.id, fresh.state.day), store.papers(g.id)), cancelled: fresh.cancelled, newPassword });
 }

@@ -15,7 +15,8 @@ export function header(d, tab) {
 }
 
 export function paperTab(d) {
-  return d.papers.length ? d.papers.map(p => `<div class="paper">${esc(p.text)}</div>`).join("") : `<p class="hint">${fmt(C.firstPaper, { hour: d.rules.resolveHour })}</p>`;
+  if (d.papers.length) return d.papers.map(p => `<div class="paper">${esc(p.text)}</div>`).join("");
+  return `<p class="hint">${d.cancelled ? C.noPaperCancelled : fmt(C.firstPaper, { hour: d.rules.resolveHour })}</p>`;
 }
 
 export function allianceTab(d) {

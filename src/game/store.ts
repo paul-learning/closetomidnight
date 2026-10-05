@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { CONFIG } from "../config.ts";
 import type { GameState, Move } from "../engine/index.ts";
 
-export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null }
+export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null; cancelled: boolean }
 export interface PlayerRow { token: string; gameId: string; idx: number; name: string; hasPassword?: boolean }
 export interface SavedMove { move: Move; locked: boolean }
 export interface PushSub { endpoint: string; gameId: string; idx: number; p256dh: string; auth: string }
@@ -20,11 +20,13 @@ db.exec(`
 `);
 // Alte Datenbanken: ungenutzte Spalte aus einer früheren Version entfernen
 if ((db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "chat_id")) db.exec("ALTER TABLE games DROP COLUMN chat_id");
+// Abgebrochene Spiele: laufen nicht weiter, die Startseite behandelt sie wie „kein Spiel“
+if (!(db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "cancelled")) db.exec("ALTER TABLE games ADD COLUMN cancelled INTEGER DEFAULT 0");
 // Passwörter für die Startseite (nur Hash, siehe game/passwords.ts)
 if (!(db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).some(c => c.name === "pw_hash")) db.exec("ALTER TABLE players ADD COLUMN pw_hash TEXT");
 
 const toGame = (r: any): GameRow | undefined => r && {
-  id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded,
+  id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded, cancelled: !!r.cancelled,
 };
 // Der Hash selbst verlässt store.ts nur über passwordHash(), für die Anmeldung.
 const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name, hasPassword: r.pw_hash != null };
@@ -44,11 +46,16 @@ export const store = {
   },
   game: (id: string) => toGame(db.prepare("SELECT * FROM games WHERE id = ?").get(id)),
   gameByAdminKey: (key: string) => toGame(db.prepare("SELECT * FROM games WHERE admin_key = ?").get(key)),
-  /** Das zuletzt angelegte Spiel; die Startseite zeigt immer dieses. */
+  /** Das zuletzt angelegte Spiel (auch abgebrochen); die Startseite zeigt nur dieses, nie ein älteres. */
   latestGame: () => toGame(db.prepare("SELECT * FROM games ORDER BY created DESC, rowid DESC LIMIT 1").get()),
-  activeGames: () => db.prepare("SELECT * FROM games WHERE json_extract(state, '$.over') = 0").all().map(toGame) as GameRow[],
+  /** Spiele, die noch laufen: nicht beendet, nicht abgebrochen. */
+  activeGames: () => db.prepare("SELECT * FROM games WHERE json_extract(state, '$.over') = 0 AND cancelled = 0").all().map(toGame) as GameRow[],
+  /** Nur laufende Spiele; ein beendetes bleibt beendet. */
+  cancelGame: (id: string) => db.prepare("UPDATE games SET cancelled = 1 WHERE id = ? AND json_extract(state, '$.over') = 0").run(id),
   player: (token: string) => toPlayer(db.prepare("SELECT * FROM players WHERE token = ?").get(token)),
   players: (gameId: string) => db.prepare("SELECT * FROM players WHERE game_id = ? ORDER BY idx").all(gameId).map(toPlayer) as PlayerRow[],
+  /** Liest nur die Abbruch-Markierung, z. B. während einer laufenden Auflösung. */
+  isCancelled: (id: string) => !!(db.prepare("SELECT cancelled FROM games WHERE id = ?").get(id) as { cancelled: number } | undefined)?.cancelled,
   saveState(gameId: string, state: GameState, resolvedOn: string) {
     db.prepare("UPDATE games SET state = ?, last_resolved = ? WHERE id = ?").run(JSON.stringify(state), resolvedOn, gameId);
   },
