@@ -102,13 +102,16 @@ AI_API_KEY=…
 
 | `AI_PROVIDER` | Schlüssel | Standardmodell | Hinweis |
 | --- | --- | --- | --- |
-| `gemini` | kostenlos über [Google AI Studio](https://aistudio.google.com) | `gemini-flash-latest` | Gratis-Kontingent reicht für eine Zeitung pro Tag bei Weitem; Google darf Gratis-Anfragen zum Training nutzen (hier nur Spielereignisse). |
+| `gemini` | kostenlos über [Google AI Studio](https://aistudio.google.com) | `gemini-3.8-flash` | Gratis-Kontingent reicht für eine Zeitung pro Tag bei Weitem; Google darf Gratis-Anfragen zum Training nutzen (hier nur Spielereignisse). Feste Version statt `gemini-flash-latest`, damit sich das Verhalten nicht ohne Deploy ändert. |
 | `mistral` | console.mistral.ai | `mistral-small-latest` | |
 | `groq` | console.groq.com | `llama-3.3-70b-versatile` | |
 | `openrouter` | openrouter.ai | – (`AI_MODEL` setzen) | |
-| `ollama` | keiner | – (`AI_MODEL` setzen) | lokales Modell auf dem Server |
+| `ollama` | keiner | – (`AI_MODEL` setzen) | lokales Modell. Im Docker-Container ist `localhost` der Container selbst: `AI_BASE_URL` auf den Rechner mit Ollama setzen, z. B. `http://ollama:11434/v1`, wenn Ollama als Container im selben Docker-Netz läuft. |
 
-`AI_MODEL` wählt ein anderes Modell, `AI_BASE_URL` eine andere Adresse. Ob es klappt, zeigt die Spielleitung unter „Verbindungen“ → „KI testen“. Alte Einstellungen mit `MISTRAL_API_KEY` funktionieren weiter.
+`AI_MODEL` wählt ein anderes Modell, `AI_BASE_URL` eine andere Adresse. Ob es klappt, zeigt die Spielleitung unter „Verbindungen“ → „KI testen“; fehlt etwas, steht dort, was.
+
+- Bei vorübergehenden Fehlern (Überlastung, Kontingent, Zeitüberschreitung) fragt der Server nach 10 Sekunden ein zweites Mal. Klappt es dann auch nicht, erscheint die schlichte Zusammenfassung – der Tag wird in jedem Fall aufgelöst.
+- Alte Einstellungen mit nur `MISTRAL_API_KEY` / `MISTRAL_MODEL` funktionieren weiter. Sobald eine `AI_…`-Einstellung gesetzt ist, gelten die alten Werte nur noch, wenn `AI_PROVIDER=mistral` ist.
 
 ## Aufbau
 
