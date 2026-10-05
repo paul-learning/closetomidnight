@@ -1,7 +1,7 @@
 // Was Spieler und Spielleitung sehen dürfen. Nur IDs und Zahlen; die Oberfläche setzt die Texte ein.
 // Geheimnisse anderer (Ziele, Siegpunkte, Angebote, Überläufer) bleiben verborgen, bis das Spiel endet.
 import { CONFIG } from "../config.ts";
-import { canDefect, canVeto, cardCost, clockTime, freePk, hasForesight, knowsAllGoals, minutesLeft, offerFor, reservedPk, SUBJECT_MAX } from "../engine/index.ts";
+import { canDefect, canVeto, cardCost, clockTime, freePk, hasForesight, knowsAllGoals, minutesLeft, offerFor, reservedPk, SUBJECT_MAX, transferredToday } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
 import { GOALS, cardById, cardTier } from "../rules/content.ts";
@@ -60,7 +60,8 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
     offer: s.over ? null : offerFor(s, i),
     accusationUsed: s.accusationUsed,
     players: s.players.map((q, j) => ({
-      idx: j, nation: q.nation, playerName: players[j].name, pk: q.pk, locked: !!moves[j]?.locked,
+      // Einfluss der anderen ohne heutige Überweisungen: sonst sähe man live, wer wem gezahlt hat
+      idx: j, nation: q.nation, playerName: players[j].name, pk: j === i || s.over ? q.pk : q.pk - transferredToday(s, j), locked: !!moves[j]?.locked,
       allGoalsKnown: j !== i && knowsAllGoals(s, i, j), // für den Leak: Ziel nicht mehr wählbar
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),

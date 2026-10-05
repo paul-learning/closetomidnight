@@ -126,7 +126,7 @@ test("Anmeldung der Spielleitung: neues Admin-Passwort macht alte Anmeldungen un
 test("Überweisung im Spielbetrieb: gespeicherter Zug reserviert, Zeitung meldet die Summe, Verlauf nennt alles", async () => {
   const g = newGame();
   const s = g.state;
-  const card = s.players[0].hand.find(c => c.cost <= s.players[0].pk);
+  const card = s.players[0].hand.find(c => c.kind !== "interaktion" && c.cost <= s.players[0].pk && !c.tracks?.krieg); // ohne Ziel, ohne Rabatt
   saveMove(g, 0, { vote: null, cardId: card?.id ?? null }, false);
   const free = s.players[0].pk - (card?.cost ?? 0);
   assert.throws(() => sendTransfer(store.game(g.id)!, 0, { to: 1, amount: free + 1 }), (e: any) => e.code === "notEnoughFree");

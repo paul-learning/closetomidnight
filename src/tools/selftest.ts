@@ -275,3 +275,20 @@ test("Überweisung: sofort, nur freier Einfluss, Betreff bereinigt, Tagessumme �
   assert.deepEqual(view(0).transfers.map(x => [x.out, x.nation, x.amount]), [[false, two.players[1].nation, 1], [true, two.players[2].nation, 2]]);
   assert.deepEqual(view(3).transfers, []);
 });
+
+test("Überweisung bleibt geheim: andere sehen den Einfluss vom Tagesbeginn; Spam-Grenze; Betreff ohne Richtungszeichen", async () => {
+  const { transfer, cleanSubject, TRANSFERS_PER_DAY } = await import("../engine/index.ts");
+  const { playerView } = await import("../game/view.ts");
+  const s = newGame(42);
+  const t = transfer(s, 0, { to: 1, amount: 2 }, null);
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any, view = (i: number) => playerView(t, i, rows, [null, null, null, null], []);
+  assert.deepEqual(view(2).players.map(p => p.pk), s.players.map(p => p.pk), "Dritte sehen nichts");
+  assert.equal(view(0).players[0].pk, s.players[0].pk - 2, "eigener Einfluss echt");
+  assert.equal(view(0).players[1].pk, s.players[1].pk, "auch Absender sieht den Empfänger ohne Überweisung");
+  assert.equal(view(1).me.pk, s.players[1].pk + 2);
+  let u = structuredClone(s); u.players[0].pk = 100;
+  for (let k = 0; k < TRANSFERS_PER_DAY; k++) u = transfer(u, 0, { to: 1, amount: 1 }, null);
+  assert.throws(() => transfer(u, 0, { to: 2, amount: 1 }, null), (e: any) => e.code === "tooManyTransfers");
+  assert.doesNotThrow(() => transfer(u, 1, { to: 0, amount: 1 }, null), "Grenze gilt je Absender");
+  assert.equal(cleanSubject("a‮b​c⁦d"), "a b c d");
+});

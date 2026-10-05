@@ -9,6 +9,7 @@ export const server = {
     badTransfer: "Diese Überweisung geht nicht. Wähl einen anderen Spieler und einen Betrag ab 1.",
     notEnoughFree: "So viel freien Einfluss hast du nicht. Was deine Karte und deine Ratsstimme kosten, bleibt reserviert.",
     resolving: "Der Tag wird gerade ausgewertet. Versuch es gleich noch einmal.",
+    tooManyTransfers: "Für heute hast du genug überwiesen. Morgen wieder.",
     badLink: "Dieser Spieler-Link gilt nicht (mehr). Melde dich auf der Startseite mit deinem Passwort an.",
     badAdminLink: "Diesen Admin-Link gibt es nicht.",
     wrongSecret: "Das Admin-Passwort stimmt nicht.",

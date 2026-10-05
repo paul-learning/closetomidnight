@@ -85,12 +85,18 @@ function bind(d, locked) {
 async function sendTransfer() {
   const f = $("#transfer"), others = ui.data.players.filter(p => p.idx !== ui.data.me.idx);
   const to = Number(f.elements.to.value), amount = Number(f.elements.amount.value), subject = f.elements.subject.value;
+  const day = ui.data.day;
   ui.error = ""; ui.notice = "";
   try {
     ui.data = await api(`/api/p/${ui.key}/transfer`, { to, amount, subject });
     ui.transfer = { to };
     ui.notice = fmt(C.transferDone, { amount, nation: nation(others.find(p => p.idx === to).nation) });
-  } catch (e) { ui.error = e.message; ui.transfer = { to, amount: f.elements.amount.value, subject }; }
+  } catch (e) {
+    ui.error = e.message; ui.transfer = { to, amount: f.elements.amount.value, subject };
+    ui.data = await api(`/api/p/${ui.key}`).catch(() => ui.data); // z. B. neuer Tag oder abgebrochen
+  }
+  // Inzwischen neuer Tag: Entwurf vom Server übernehmen, sonst landete der gestrige Zug im neuen Tag
+  if (ui.data.day !== day) { ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) }; newDay(); }
   render();
 }
 
