@@ -31,7 +31,7 @@ export function incomingBox(d) {
 /** Kasten „Dein Geheimdienst meldet“: was der eigene Leak am zuletzt aufgelösten Tag aufgedeckt hat. */
 export function intelBox(d) {
   const news = d.me.intelNew ?? [];
-  if (!news.length || d.cancelled) return "";
+  if (!news.length || d.cancelled || d.over) return ""; // nach Spielende zeigt die Auswertung ohnehin alle Ziele
   const title = fmt(C.intelNewTitle, { day: news[0].day });
   return `<section class="intel-new" aria-label="${esc(title)}"><b>${esc(title)}</b>
     <ul>${news.map(x => `<li>${tag(x.kind)}${esc(fmt(C.intelLine, { nation: nation(x.nation), goal: goalText(x) }))}</li>`).join("")}</ul>

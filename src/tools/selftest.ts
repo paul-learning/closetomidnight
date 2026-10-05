@@ -192,7 +192,8 @@ test("Leak: das aufgedeckte Ziel steht am nächsten Tag im Kasten, danach nur no
   assert.deepEqual(view(next, 0).me.intelNew, [{ id: goal.id, kind: goal.kind, vp: goal.vp, nation: learned.nation, day: s.day }]);
   assert.deepEqual(view(next, 1).me.intelNew, [], "nur der Spieler, der geleakt hat");
   const later = resolveDay(next, [none, none, none, none]);
-  if (!later.over) assert.deepEqual(view(later, 0).me.intelNew, [], "am Tag danach nicht mehr");
+  assert.ok(!later.over, "Testaufbau: Spiel läuft noch");
+  assert.deepEqual(view(later, 0).me.intelNew, [], "am Tag danach nicht mehr");
   assert.equal(view(later, 0).me.intel.length, 2, "in der Akte bleibt alles");
 });
 
