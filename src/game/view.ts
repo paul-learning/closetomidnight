@@ -48,7 +48,8 @@ export function adminView(s: GameState, game: { id: string; bots: boolean }, pla
   return {
     day: s.day, days: BALANCE.days, over: s.over, bots: game.bots, resolveHour: CONFIG.resolveHour,
     status: { ai: aiConfigured(), aiModel: aiConfigured() ? CONFIG.mistral.model : null, pushPlayers: subscriberCount(game.id) },
-    players: players.map((pl, i) => ({ name: pl.name, nation: s.players[i].nation, url: playerUrl(pl.token), saved: !!moves[i], locked: !!moves[i]?.locked })),
+    players: players.map((pl, i) => ({ name: pl.name, nation: s.players[i].nation, url: playerUrl(pl.token), saved: !!moves[i], locked: !!moves[i]?.locked,
+      hasPassword: !!pl.hasPassword })),
     papers: papers.map(p => ({ ...p, clock: clockTime(s.history.find(h => h.day === p.day)?.tracksAfter ?? s.tracks),
       midnight: s.over && s.ending !== "vernunft" && p.day === s.history.at(-1)?.day })),
   };

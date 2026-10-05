@@ -78,3 +78,28 @@ test("zu teure Karte wird beim Speichern abgelehnt", () => {
   s.players[0].hand = [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }];
   assert.throws(() => validateMove(s, 0, { cardId: "gipfel" }), (e: unknown) => e instanceof RuleError && e.code === "tooExpensive");
 });
+
+test("Passwörter: Hash prüft richtig, Schreibweise egal, kein Klartext gespeichert", async () => {
+  const { generatePassword, hashPassword, verifyPassword } = await import("../game/passwords.ts");
+  const pw = generatePassword();
+  assert.match(pw, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+  assert.notEqual(generatePassword(), pw);
+  const h = hashPassword(pw);
+  assert.ok(!h.includes(pw.replace(/-/g, "")));
+  assert.ok(await verifyPassword(pw, h));
+  assert.ok(await verifyPassword(` ${pw.toUpperCase().replace(/-/g, "")} `, h));
+  assert.ok(!await verifyPassword(pw.slice(0, -1) + (pw.endsWith("a") ? "b" : "a"), h));
+  assert.ok(!await verifyPassword(pw, null));
+  assert.ok(!await verifyPassword(123, h));
+  assert.ok(!await verifyPassword(pw, "kaputt"));
+  assert.notEqual(hashPassword(pw), h, "jeder Hash hat ein eigenes Salz");
+});
+
+test("Fehlversuche: auch gleichzeitige Anfragen kommen nicht über die Grenze", async () => {
+  const { failureLimiter } = await import("../http/rateLimit.ts");
+  const lim = failureLimiter(10, 60_000);
+  const allowed = (await Promise.all(Array.from({ length: 50 }, async () => { await null; return lim.tryAttempt("1.2.3.4"); }))).filter(Boolean).length;
+  assert.equal(allowed, 10);
+  lim.reset("1.2.3.4");
+  assert.ok(lim.tryAttempt("1.2.3.4"));
+});

@@ -6,7 +6,7 @@ import { T } from "../i18n/index.ts";
 import { store } from "./store.ts";
 import { localNow } from "./time.ts";
 
-const token = (bytes = 12) => randomBytes(bytes).toString("base64url");
+export const token = (bytes = 12) => randomBytes(bytes).toString("base64url");
 const digest = (s: string) => createHash("sha256").update(s).digest();
 
 export type SecretCheck = "ok" | "wrongSecret" | "noSecret";

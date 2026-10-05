@@ -15,7 +15,8 @@ function render() {
     <h2>${C.linksTitle}</h2><p class="hint">${C.linksHint}</p>
     ${d.players.map((p, i) => `<div class="field"><b>${nation(p.nation)}</b> · ${status(p)}
       <div class="copy"><input type="text" name="name${i}" value="${esc(p.name)}" aria-label="${fmt(C.nameLabel, { nation: nation(p.nation) })}"></div>
-      <div class="copy"><input type="text" readonly value="${esc(p.url)}" aria-label="${C.linkLabel}"><button class="btn ghost" data-copy="${esc(p.url)}">${C.copy}</button></div></div>`).join("")}
+      <div class="copy"><input type="text" readonly value="${esc(p.url)}" aria-label="${C.linkLabel}"><button class="btn ghost" data-copy="${esc(p.url)}">${C.copy}</button></div>
+      ${passwordRow(p, i, d.newPassword)}</div>`).join("")}
     <button class="btn ghost" id="names">${C.saveNames}</button>
     <h2>${C.resolveTitle}</h2><p class="hint">${fmt(C.resolveHint, { hour: d.resolveHour })}</p>
     <button class="btn ${all ? "" : "red"}" id="resolve" ${d.over ? "disabled" : ""}>${all ? C.resolveNow : C.resolveAnyway}</button>
@@ -43,7 +44,20 @@ function render() {
     render();
   }));
   $("#test-ai").addEventListener("click", e => runTest("ai", e.target));
+  $$("[data-pw]").forEach(b => b.addEventListener("click", () => {
+    const i = Number(b.dataset.pw), p = d.players[i];
+    if (p.hasPassword && !confirm(fmt(C.pwConfirm, { nation: nation(p.nation) }))) return;
+    act("password", { idx: i });
+  }));
   $("#names").addEventListener("click", () => act("settings", { names: d.players.map((_, i) => $(`[name=name${i}]`).value) }));
+}
+
+// Passwort für die Startseite: Status, Knopf zum Erzeugen; ein neues wird genau einmal angezeigt.
+function passwordRow(p, i, fresh) {
+  const shown = fresh?.idx === i ? `<p class="hint">${fmt(C.pwShown, { nation: nation(p.nation) })}</p>
+    <div class="copy"><input type="text" readonly value="${esc(fresh.password)}" aria-label="${C.password}"><button class="btn ghost" data-copy="${esc(fresh.password)}">${C.copy}</button></div>` : "";
+  return `<div class="copy"><span class="hint">${p.hasPassword ? C.pwSet : C.pwNone}</span>
+    <button class="btn ghost" data-pw="${i}">${p.hasPassword ? C.pwReset : C.pwNew}</button></div>${shown}`;
 }
 
 function describeTest(t) {

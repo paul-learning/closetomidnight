@@ -20,5 +20,13 @@ export function failureLimiter(maxFailures: number, windowMs: number) {
       if (failures.size > 10_000) for (const [k] of failures) { if (!recent(k, now).length) failures.delete(k); }
     },
     reset(key: string) { failures.delete(key); },
+    /**
+     * Zählt einen Versuch schon vor der Prüfung (synchron, also ohne Lücke für gleichzeitige Anfragen).
+     * false = gesperrt. Nach Erfolg reset() aufrufen.
+     */
+    tryAttempt(key: string): boolean { if (this.blocked(key)) return false; this.fail(key); return true; },
   };
 }
+
+/** Gemeinsam für alle Passwörter (Anmeldung, Admin-Passwort beim Anlegen): 10 Fehlversuche je Adresse in 15 Minuten. */
+export const passwordAttempts = failureLimiter(10, 15 * 60_000);
