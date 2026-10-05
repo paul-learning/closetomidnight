@@ -1,7 +1,7 @@
 // Spielerseite: Zustand, Darstellung und Speichern. Inhalte der Schritte und Reiter stehen in player/.
 import { $, $$, T, esc, fmt, api } from "./util.js";
 import { STEPS, stepsFor } from "./player/steps.js";
-import { allianceTab, header, paperTab, resultTab } from "./player/tabs.js";
+import { allianceTab, header, incomingBox, paperTab, resultTab } from "./player/tabs.js";
 import { renderIntro, seenIntro } from "./player/intro.js";
 import { dismissPush, enablePush, pushCard, pushState, syncPush } from "./player/push.js";
 
@@ -34,7 +34,8 @@ function render() {
   if (ui.intro >= 0) return renderIntro(ui.intro, d.rules, p => { ui.intro = p; render(); }, () => { ui.intro = -1; render(); });
   const locked = d.myMove?.locked && !ui.draft._editing;
   ui.step = Math.min(ui.step, stepsFor(d).length - 1);
-  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d) : d.over ? resultTab(d) : moveTab(d, locked);
+  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d)
+    : incomingBox(d) + (d.over ? resultTab(d) : moveTab(d, locked));
   const notice = d.cancelled ? `<div class="err" role="status">${C.cancelledPlayer} <a class="link" href="/">${C.toStart}</a></div>` : "";
   $("#app").innerHTML = header(d, ui.tab) + notice + (d.cancelled ? "" : pushCard(ui.push)) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
   bar(d, locked);

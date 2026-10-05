@@ -61,6 +61,11 @@ button, select, input { font: inherit; }
 .opt select { margin-top: 8px; width: 100%; padding: 6px; border: 1px solid #a99f86; background: #fff; border-radius: 2px; }
 .opt.off { opacity: .5; cursor: not-allowed; }
 
+/* Was gegen dich gespielt wurde */
+.incoming { border: 2px solid var(--red); border-radius: 3px; padding: 12px 14px; margin: 14px 0 4px; background: #2e2322; }
+.incoming ul { margin: 6px 0 0; padding-left: 18px; }
+.incoming li + li { margin-top: 4px; }
+
 /* Rotes Telefon */
 .phone { border: 2px solid var(--red); border-radius: 3px; padding: 14px; background: #2e2322; }
 .phone .from { font-weight: 700; color: #ffb4a8; }

@@ -10,6 +10,18 @@ import { playerUrl } from "./registration.ts";
 import { aiConfigured, aiLabel } from "../integrations/ai.ts";
 import { subscriberCount, vapidPublicKey } from "./notifications.ts";
 
+/**
+ * Was dem Spieler am zuletzt aufgelösten Tag angetan wurde: Karten gegen ihn und eine Anklage.
+ * Nur Öffentliches aus dem Tagesbericht – wer angeklagt hat, bleibt geheim.
+ */
+export function incomingFor(s: GameState, i: number) {
+  const r = s.history.at(-1), me = s.players[i].nation;
+  if (!r) return null;
+  const cards = r.cards.filter(c => c.target === me).map(c => ({ nation: c.nation, card: c.card, stolen: c.stolen ?? null }));
+  const accused = r.accusation?.target === me ? { correct: r.accusation.correct } : null;
+  return cards.length || accused ? { day: r.day, cards, accused } : null;
+}
+
 const goalInfo = (ids: string[]) => ids.map(id => { const g = GOALS.find(x => x.id === id)!; return { id, kind: g.kind, vp: g.vp }; });
 
 export function playerView(s: GameState, i: number, players: PlayerRow[], moves: (SavedMove | null)[], papers: { day: number; text: string }[]) {
@@ -39,6 +51,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),
     papers,
+    incoming: incomingFor(s, i),
     myMove: moves[i] ?? null,
     pushKey: vapidPublicKey(),
   };
