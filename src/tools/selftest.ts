@@ -135,3 +135,12 @@ test("Kasten „gegen dich“: Diebstahl mit tatsächlichem Betrag, Leak, Anklag
   assert.equal(incomingFor(next, 3), null, "wer nichts abbekommen hat, sieht keinen Kasten");
   assert.equal(incomingFor(newGame(1), 0), null, "vor dem ersten aufgelösten Tag: nichts");
 });
+
+test("Kasten „gegen dich“: Anklage zeigt nur richtig/falsch, nie die Ankläger", async () => {
+  const { incomingFor } = await import("../game/view.ts");
+  const none = { vote: null, cardId: null };
+  const s = newGame(5);
+  const next = resolveDay(s, [none, { ...none, accuse: 0 }, { ...none, accuse: 0 }, none]); // Spieler 0 ist kein Überläufer
+  assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false } });
+  for (const i of [1, 2, 3]) assert.equal(incomingFor(next, i), null, "Ankläger und Unbeteiligte sehen keinen Kasten");
+});

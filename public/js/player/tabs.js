@@ -20,7 +20,7 @@ export function incomingBox(d) {
   if (!inc || d.cancelled) return "";
   const lines = inc.cards.map(c => {
     const vars = { nation: nation(c.nation), card: T.cards[c.card], n: c.stolen };
-    const text = c.stolen > 0 ? C.incomingSteal : c.stolen === 0 ? C.incomingStealNothing : c.card === "leak" ? C.incomingLeak : C.incomingCard;
+    const text = c.stolen > 0 ? C.incomingSteal : c.stolen === 0 ? C.incomingStealNothing : c.card === "leak" ? (d.me.defector ? C.incomingLeakDefector : C.incomingLeak) : C.incomingCard;
     return fmt(text, vars);
   });
   if (inc.accused) lines.push(inc.accused.correct ? C.incomingAccusedRight : C.incomingAccusedWrong);
