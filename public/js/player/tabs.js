@@ -14,6 +14,20 @@ export function header(d, tab) {
       .map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" data-tab="${k}">${l}</button>`).join("")}</nav>`;
 }
 
+/** Kasten „Das ging gegen dich“: Karten und Anklage gegen den Spieler am zuletzt aufgelösten Tag. */
+export function incomingBox(d) {
+  const inc = d.incoming;
+  if (!inc || d.cancelled) return "";
+  const lines = inc.cards.map(c => {
+    const vars = { nation: nation(c.nation), card: T.cards[c.card], n: c.stolen };
+    const text = c.stolen > 0 ? C.incomingSteal : c.stolen === 0 ? C.incomingStealNothing : c.card === "leak" ? C.incomingLeak : C.incomingCard;
+    return fmt(text, vars);
+  });
+  if (inc.accused) lines.push(inc.accused.correct ? C.incomingAccusedRight : C.incomingAccusedWrong);
+  return `<section class="incoming" aria-label="${fmt(C.incomingTitle, { day: inc.day })}"><b>${fmt(C.incomingTitle, { day: inc.day })}</b>
+    <ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></section>`;
+}
+
 export function paperTab(d) {
   if (d.papers.length) return d.papers.map(p => `<div class="paper">${esc(p.text)}</div>`).join("");
   return `<p class="hint">${d.cancelled ? C.noPaperCancelled : fmt(C.firstPaper, { hour: d.rules.resolveHour })}</p>`;

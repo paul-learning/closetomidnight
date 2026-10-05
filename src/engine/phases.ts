@@ -64,12 +64,13 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     }
     if (c.kind === "schmutzig") { p.stats.dirtyPlayed++; if (s.day >= BALANCE.defectFromDay) p.stats.lateDirty++; }
     if (c.kind === "sauber") p.stats.cleanPlayed++;
-    if (c.steal && target) { const n = Math.min(target.pk, c.steal); target.pk -= n; p.pk += n; }
+    let stolen: number | undefined;
+    if (c.steal && target) { stolen = Math.min(target.pk, c.steal); target.pk -= stolen; p.pk += stolen; }
     if (c.leak && target) {
       const goal = target.goals.find(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
       if (goal) p.intel.push({ nation: target.nation, goal });
     }
-    rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined });
+    rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined, ...(stolen !== undefined ? { stolen } : {}) });
   }
 }
 

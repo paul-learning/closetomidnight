@@ -118,3 +118,20 @@ test("Zeitungstext: Markdown wird zu reinem Text", async () => {
   // Normaler Text bleibt, wie er ist: Sternchen in Wörtern, Mathe, einzelne Zeichen, Emojis
   for (const s of ["🗞 Tag 3: Krieg 4 × 2", "Preis 5 * 3 = 15", "• schon ein Punkt", "Rüstung_2026 bleibt", "Sterne * hier"]) assert.equal(toPlainText(s), s);
 });
+
+test("Kasten „gegen dich“: Diebstahl mit tatsächlichem Betrag, Leak, Anklage – nur für das Ziel", async () => {
+  const { incomingFor } = await import("../game/view.ts");
+  const s = newGame(11);
+  // Spieler 0 erpresst Spieler 1 (der nur 1 Einfluss hat), Spieler 2 leakt Spieler 1
+  s.players[0].hand = [{ id: "erpressung", kind: "interaktion", cost: 0, steal: 2 }];
+  s.players[2].hand = [{ id: "leak", kind: "interaktion", cost: 0, leak: true }];
+  s.players[1].pk = 1;
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(s, [{ ...none, cardId: "erpressung", target: 1 }, none, { ...none, cardId: "leak", target: 1 }, none]);
+  const inc = incomingFor(next, 1)!;
+  assert.equal(inc.day, 1);
+  assert.deepEqual(inc.cards.map(c => [c.nation, c.card, c.stolen]), [[next.players[0].nation, "erpressung", 1], [next.players[2].nation, "leak", null]]);
+  assert.equal(inc.accused, null);
+  assert.equal(incomingFor(next, 3), null, "wer nichts abbekommen hat, sieht keinen Kasten");
+  assert.equal(incomingFor(newGame(1), 0), null, "vor dem ersten aufgelösten Tag: nichts");
+});
