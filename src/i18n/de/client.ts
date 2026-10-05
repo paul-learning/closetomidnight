@@ -14,6 +14,7 @@ export const client = {
     steps: { krise: "Die Krise", aktion: "Deine Aktion", telefon: "Das rote Telefon", akte: "Geheimakte", uebersicht: "Übersicht" },
     stepsLabel: "Schritte",
     back: "Zurück", next: "Weiter", lock: "Zug festlegen", edit: "Ändern", locked: "Festgelegt",
+    toOverview: "Zur Übersicht", changeStep: "{step} ändern",
     crisisHint: "Normale Optionen brauchen {votes} Stimmen, die stärkste braucht {strong}. Wird eine beschlossen, zahlen alle, auch wer dagegen war.",
     withoutDecision: "Ohne Beschluss: {track} +{severity}",
     abstain: "Enthaltung",
