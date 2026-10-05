@@ -40,7 +40,8 @@ function render() {
   const g = ui.lobby.game, last = remembered();
   if (adminReturnPath() && ui.who === null) ui.who = "admin"; // kommt von einer Admin-Seite: Spielleitung vorauswählen
   if (!g && ui.who === null) ui.who = "admin"; // ohne Spiel gibt es nur die Spielleitung
-  const showLast = last && (last.admin || (g && last.gameId === g.id));
+  // Von einer Admin-Seite hierher geschickt, aber als Spieler gemerkt: gleich das Anmeldeformular zeigen
+  const showLast = last && (last.admin || (g && last.gameId === g.id && !adminReturnPath()));
   $("#app").innerHTML = `<header class="who"><h1>${C.title}</h1></header>
     ${ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : ""}
     ${showLast ? welcomeBack(last) : loginForm(g)}`;
