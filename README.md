@@ -18,15 +18,21 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 
 - Pull Request → Tests → automatisch auf Staging (game-staging…).
 - Merge auf master → Tests → automatisch auf Produktion.
-- Zurückrollen, Prod-Daten nach Staging kopieren, Status: Actions → „Betrieb“ → „Run workflow“.
-- Startet eine neue Prod-Version nicht, setzt der Server von selbst die vorige wieder in Gang.
+- Branch auf Staging, eine Version zurück (Staging oder Prod), Prod-Daten nach Staging kopieren, Status: Actions → „Betrieb“ → „Run workflow“.
+- Startet eine neue Version nicht, setzt der Server von selbst die vorige wieder in Gang.
 
 Auf dem Server liegen `~/fvz/prod` und `~/fvz/staging` (Git-Klone, je mit eigener `.env` und `compose.server.yml`, nicht im Repo) und `~/fvz/deploy.sh`. GitHub erreicht den Server nur über zwei SSH-Schlüssel, die jeweils auf eine Umgebung festgelegt sind und nur `deploy.sh` aufrufen dürfen.
 
-**Ändert sich `deploy/deploy.sh`**, nach dem Merge einmal auf dem Server neu installieren (es läuft nicht aus dem Klon):
+**Wichtig:** Die `.env` in `~/fvz/prod` und `~/fvz/staging` enthält `COMPOSE_FILE=compose.server.yml`. Beim Bearbeiten nicht entfernen – sonst nimmt `docker compose` die `docker-compose.yml` aus dem Repo, und Caddy erreicht das Spiel nicht mehr.
+
+Von Hand auf dem Server: `~/fvz/deploy.sh prod status` (bzw. `staging`, `rollback`).
+
+**Ändert sich `deploy/deploy.sh`**, nach dem Merge einmal auf dem Server neu installieren (es läuft nicht aus dem Klon). Erst in eine neue Datei schreiben, damit bei einem Fehler nicht eine leere `deploy.sh` übrig bleibt:
 
 ```bash
-git -C ~/fvz/prod fetch -q origin && git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh
+git -C ~/fvz/prod fetch -q origin \
+  && git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh.new \
+  && chmod 700 ~/fvz/deploy.sh.new && mv ~/fvz/deploy.sh.new ~/fvz/deploy.sh
 ```
 
 Server oder GitHub neu einrichten: die Anleitung von damals steht im Git-Verlauf, [`deploy/EINRICHTEN.md` @ 93a7ae6](https://github.com/paul-learning/closetomidnight/blob/93a7ae6/deploy/EINRICHTEN.md).
@@ -53,6 +59,8 @@ fvz.example.com {
 Die Datenbank liegt in `./data/fvz.sqlite`.
 
 ## Auf dem Server
+
+Die Befehle hier laufen im Verzeichnis der Installation, auf dem CI-Server also in `~/fvz/prod` (bzw. `~/fvz/staging`).
 
 - In `.env`: ein langes, zufälliges `ADMIN_SECRET` (z. B. `openssl rand -base64 24`), `BASE_URL` mit https und `TRUST_PROXY=1`.
 - `chmod 600 .env` – nur du darfst die Schlüssel lesen.
