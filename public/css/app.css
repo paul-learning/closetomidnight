@@ -67,6 +67,7 @@ button, select, input { font: inherit; }
 .phone q { display: block; font-style: italic; margin: 6px 0 10px; }
 .switch { display: flex; gap: 10px; align-items: center; cursor: pointer; }
 .switch input { width: 20px; height: 20px; accent-color: var(--red); }
+.switch.spaced { margin-top: 12px; }
 
 .secret li { margin: 6px 0; }
 .secret .vp { color: var(--amber); font-weight: 600; }

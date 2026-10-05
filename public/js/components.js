@@ -11,8 +11,8 @@ export function clockSvg(time, midnight) {
   return `<svg viewBox="0 0 148 148" role="img" aria-label="${fmt(T.client.clockLabel, { time: midnight ? "00:00" : time })}">
     <path d="M74 74 L74 6 A68 68 0 0 1 108 15.1 Z" fill="var(--red)" opacity=".18" transform="rotate(-30 74 74)"/>
     <circle cx="74" cy="74" r="68" fill="none" stroke="var(--rule)" stroke-width="3"/>${ticks}
-    <line class="hand" x1="74" y1="74" x2="74" y2="36" stroke="var(--paper)" stroke-width="5" stroke-linecap="round" style="transform-origin:74px 74px;transform:rotate(${ha}deg)"/>
-    <line class="hand" x1="74" y1="78" x2="74" y2="18" stroke="var(--amber)" stroke-width="3" stroke-linecap="round" style="transform-origin:74px 74px;transform:rotate(${ma}deg)"/>
+    <line class="hand" x1="74" y1="74" x2="74" y2="36" stroke="var(--paper)" stroke-width="5" stroke-linecap="round" transform="rotate(${ha} 74 74)"/>
+    <line class="hand" x1="74" y1="78" x2="74" y2="18" stroke="var(--amber)" stroke-width="3" stroke-linecap="round" transform="rotate(${ma} 74 74)"/>
     <circle cx="74" cy="74" r="4" fill="var(--amber)"/></svg>`;
 }
 

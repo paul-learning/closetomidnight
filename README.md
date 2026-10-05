@@ -27,6 +27,8 @@ Auf dem Server liegen `~/fvz/prod` und `~/fvz/staging` (Git-Klone, je mit eigene
 
 Von Hand auf dem Server: `~/fvz/deploy.sh prod status` (bzw. `staging`, `rollback`).
 
+**Während ein Deployment läuft** (Actions zeigt es an), den Container nicht von Hand neu starten (`docker compose up -d`): Sonst läuft kurz das alte Image, die Prüfung des Deploys schlägt fehl und er setzt die vorige Version zurück. Nach einer Änderung an der `.env` also erst warten, bis kein Deploy mehr läuft.
+
 **Ändert sich `deploy/deploy.sh`**, nach dem Merge einmal auf dem Server neu installieren (es läuft nicht aus dem Klon). Erst in eine neue Datei schreiben, damit bei einem Fehler nicht eine leere `deploy.sh` übrig bleibt:
 
 ```bash
@@ -66,6 +68,7 @@ Die Befehle hier laufen im Verzeichnis der Installation, auf dem CI-Server also 
 - `chmod 600 .env` – nur du darfst die Schlüssel lesen.
 - Schlüssel tauschen: `.env` ändern, dann `docker compose up -d`. Ein neues `ADMIN_SECRET` meldet die Spielleitung überall ab.
 - Nach zehn falschen Passwörtern (Spieler oder Admin) ist die Adresse für 15 Minuten gesperrt.
+- Jede Antwort trägt Sicherheits-Kopfzeilen (`src/http/securityHeaders.ts`): Skripte, Stile und Bilder nur vom eigenen Server (Ausnahme: Google-Schriften), keine Einbettung in fremde Seiten, keine Weitergabe der Adresse (Spieler-Links enthalten das geheime Token), bei HTTPS zusätzlich HSTS. Deshalb im Code keine Inline-Skripte und keine `style="…"`-Attribute – Stile gehören nach `public/css/app.css`.
 - Sicherung, z. B. nächtlich per cron: `sqlite3 data/fvz.sqlite ".backup data/backup-$(date +%F).sqlite"`
 - Ob die KI-Zeitung funktioniert und wie viele Spieler Benachrichtigungen aktiviert haben, zeigt die Spielleitung unter „Verbindungen“.
 
@@ -127,7 +130,7 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `adminSession.ts` (Anmeldung der Spielleitung), `history.ts` (Verlauf exportieren), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
 | `src/integrations/` | Außenwelt: `ai.ts` (KI über OpenAI-kompatible Schnittstelle), `aiProviders.ts` (Voreinstellungen je Anbieter), `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
-| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`, `adminAuth.ts` (Zugang der Spielleitung). |
+| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`, `adminAuth.ts` (Zugang der Spielleitung), `securityHeaders.ts`. |
 | `src/main.ts` | Startpunkt. |
 | `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
 | `deploy/` | `deploy.sh` (läuft auf dem Server). |

@@ -1,5 +1,7 @@
 FROM node:22-slim
 WORKDIR /app
+# package.json macht "type": "module" ausdrücklich (sonst erkennt Node ES-Module nur an der Syntax)
+COPY package.json ./
 COPY src ./src
 COPY public ./public
 ENV NODE_ENV=production PORT=8080 DB_PATH=/data/fvz.sqlite TZ=Europe/Berlin
