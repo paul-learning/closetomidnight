@@ -102,7 +102,7 @@ AI_API_KEY=…
 
 | `AI_PROVIDER` | Schlüssel | Standardmodell | Hinweis |
 | --- | --- | --- | --- |
-| `gemini` | kostenlos über [Google AI Studio](https://aistudio.google.com) | `gemini-3.8-flash` | Gratis-Kontingent reicht für eine Zeitung pro Tag bei Weitem; Google darf Gratis-Anfragen zum Training nutzen (hier nur Spielereignisse). Feste Version statt `gemini-flash-latest`, damit sich das Verhalten nicht ohne Deploy ändert. |
+| `gemini` | kostenlos über [Google AI Studio](https://aistudio.google.com) | `gemini-3.5-flash-lite` | Gratis-Kontingent reicht für eine Zeitung pro Tag bei Weitem; Google darf Gratis-Anfragen zum Training nutzen (hier nur Spielereignisse). Flash-Lite, weil das neueste Flash im Gratis-Kontingent oft überlastet ist (503); mehr Witz mit `AI_MODEL=gemini-3.8-flash`. Feste Version statt `gemini-flash-latest`, damit sich das Verhalten nicht ohne Deploy ändert. |
 | `mistral` | console.mistral.ai | `mistral-small-latest` | |
 | `groq` | console.groq.com | `llama-3.3-70b-versatile` | |
 | `openrouter` | openrouter.ai | – (`AI_MODEL` setzen) | |
