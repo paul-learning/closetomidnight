@@ -44,6 +44,16 @@ export function cancelGame(gameId: string) {
   store.cancelGame(gameId);
 }
 
+export class CannotDelete extends Error {}
+
+/** Spiel endgültig löschen. Nur beendete oder abgebrochene; ein laufendes erst abbrechen. */
+export function deleteGame(gameId: string) {
+  const g = store.game(gameId);
+  if (!g) return;
+  if (!g.state.over && !g.cancelled) throw new CannotDelete();
+  store.deleteGame(gameId);
+}
+
 /** Einstellungen der Spielleitung übernehmen; Unbekanntes wird ignoriert. */
 export function updateSettings(gameId: string, input: any) {
   if (typeof input?.bots === "boolean") store.setBots(gameId, input.bots);

@@ -25,6 +25,7 @@ export function createGame(opts: { names: string[]; bots: boolean }): { adminKey
     // Immer nur ein laufendes Spiel: ein neues bricht das bisherige ab
     for (const old of store.activeGames()) store.cancelGame(old.id);
     store.insertGame({ id, adminKey, state, bots: opts.bots, lastResolved: late ? now.date : null });
+    store.setSetting("current_game", id);
     state.players.forEach((p, idx) => store.insertPlayer({
       token: token(12), gameId: id, idx, name: (opts.names[idx] ?? "").trim().slice(0, 40) || T.nations[p.nation].name,
     }));
