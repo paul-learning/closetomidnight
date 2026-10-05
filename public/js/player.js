@@ -72,7 +72,7 @@ function bind(d, locked) {
 /** Interaktionskarte gewählt, aber noch kein Ziel: der Zug ist noch nicht speicherbar. */
 function awaitingTarget(d, draft) {
   const card = d.me.hand.find(c => c.id === draft.cardId);
-  return !!card && !!(card.steal || card.leak) && draft.target === undefined;
+  return !!card && card.kind === "interaktion" && draft.target === undefined;
 }
 
 // Immer nur ein Speichervorgang gleichzeitig; Änderungen währenddessen werden danach mit dem neuesten Entwurf gesendet.

@@ -144,3 +144,24 @@ test("Kasten „gegen dich“: Anklage zeigt nur richtig/falsch, nie die Ankläg
   assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false } });
   for (const i of [1, 2, 3]) assert.equal(incomingFor(next, i), null, "Ankläger und Unbeteiligte sehen keinen Kasten");
 });
+
+test("Sanktionen: braucht ein Ziel, kostet 1 Einfluss, Ziel verliert 1 Siegpunkt, erscheint im Kasten", async () => {
+  const { incomingFor } = await import("../game/view.ts");
+  const s = newGame(21);
+  s.players[0].hand = [{ id: "sanktionen", kind: "interaktion", cost: 1, sanction: 1 }];
+  assert.throws(() => validateMove(s, 0, { vote: null, cardId: "sanktionen" }), RuleError, "ohne Ziel abgelehnt");
+  const none = { vote: null, cardId: null };
+  const before = { pk0: s.players[0].pk, vp2: s.players[2].vp };
+  const next = resolveDay(s, [{ ...none, cardId: "sanktionen", target: 2 }, none, none, none]);
+  assert.equal(next.players[2].vp, before.vp2 - 1);
+  assert.ok(next.players[0].pk <= before.pk0 - 1 + 3, "Kosten bezahlt (plus Tageseinkommen)");
+  assert.deepEqual(incomingFor(next, 2)!.cards, [{ nation: next.players[0].nation, card: "sanktionen", stolen: null, vpLost: 1 }]);
+});
+
+test("Kartenstapel: Interaktionskarten häufig genug", () => {
+  const total = CARD_POOL.reduce((n, [, k]) => n + k, 0);
+  const inter = CARD_POOL.filter(([c]) => c.kind === "interaktion").reduce((n, [, k]) => n + k, 0);
+  // Wahrscheinlichkeit, ohne Interaktionskarte in den drei Startkarten zu sein
+  const none = ((total - inter) / total) * ((total - inter - 1) / (total - 1)) * ((total - inter - 2) / (total - 2));
+  assert.ok(none < 0.35, `${Math.round(none * 100)} % ohne Interaktionskarte (vorher 53 %)`);
+});

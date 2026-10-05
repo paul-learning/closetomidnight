@@ -20,16 +20,18 @@ export const CRISES: Crisis[] = [
 
 // Je Karte die Anzahl im Stapel
 export const CARD_POOL: [Card, number][] = [
-  [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }, 3],
+  [{ id: "gipfel", kind: "sauber", cost: 3, vp: 2, tracks: { krieg: -2 } }, 4],
   [{ id: "faktencheck", kind: "sauber", cost: 2, vp: 1, tracks: { kollaps: -1 } }, 3],
-  [{ id: "pressefreiheit", kind: "sauber", cost: 3, vp: 2, tracks: { autokratie: -2 } }, 3],
-  [{ id: "konjunktur", kind: "sauber", cost: 3, vp: 2, tracks: { kollaps: -2 } }, 3],
+  [{ id: "pressefreiheit", kind: "sauber", cost: 3, vp: 2, tracks: { autokratie: -2 } }, 4],
+  [{ id: "konjunktur", kind: "sauber", cost: 3, vp: 2, tracks: { kollaps: -2 } }, 4],
   [{ id: "waffendeal", kind: "schmutzig", cost: 1, vp: 3, tracks: { krieg: 1 } }, 3],
   [{ id: "notstand", kind: "schmutzig", cost: 0, vp: 2, pk: 2, tracks: { autokratie: 1 } }, 2],
   [{ id: "steuerdumping", kind: "schmutzig", cost: 1, vp: 3, tracks: { kollaps: 1 } }, 3],
-  [{ id: "propaganda", kind: "schmutzig", cost: 0, vp: 2, tracks: { autokratie: 1 } }, 2],
-  [{ id: "erpressung", kind: "interaktion", cost: 2, steal: 2 }, 3],
-  [{ id: "leak", kind: "interaktion", cost: 2, leak: true }, 2],
+  [{ id: "propaganda", kind: "schmutzig", cost: 0, vp: 2, tracks: { autokratie: 1 } }, 1],
+  // Interaktion: braucht ein Ziel. Mehr Exemplare, damit fast jeder im Spiel eine zu sehen bekommt.
+  [{ id: "erpressung", kind: "interaktion", cost: 2, steal: 2 }, 5],
+  [{ id: "leak", kind: "interaktion", cost: 2, leak: true }, 4],
+  [{ id: "sanktionen", kind: "interaktion", cost: 1, sanction: 1 }, 2],
 ];
 
 // Je Großmacht mehrere Angebote; bei einem Anruf wird eines davon gezogen.

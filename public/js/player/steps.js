@@ -23,7 +23,7 @@ export const STEPS = {
     const others = d.players.filter(p => p.idx !== d.me.idx);
     return `<p class="hint">${fmt(C.actionHint, { pk: d.me.pk })}</p><div class="opts">${d.me.hand.map(c => {
       const poor = c.effCost > d.me.pk;
-      const target = (c.steal || c.leak) && m.cardId === c.id
+      const target = c.kind === "interaktion" && m.cardId === c.id
         ? `<select name="target" ${dis}><option value="">${C.chooseTarget}</option>${others.map(p => `<option value="${p.idx}" ${m.target === p.idx ? "selected" : ""}>${nation(p.nation)}</option>`).join("")}</select>` : "";
       return option("card", c.id, m.cardId === c.id, dis || (poor ? "disabled" : ""),
         `${tag(c.kind)}<span class="n">${cardName(c)}</span><br><span class="d">${cardEffects(c)}${poor ? ` · ${C.tooExpensive}` : ""}</span>${target}`, poor ? "off" : "");

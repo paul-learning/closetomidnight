@@ -18,7 +18,7 @@ export function validateMove(s: GameState, i: number, input: any): Move {
   if (card) {
     if (cardCost(p, card) > p.pk) throw new RuleError("tooExpensive");
     out.cardId = card.id;
-    if (card.steal || card.leak) {
+    if (card.kind === "interaktion") {
       const t = Number(m.target);
       if (!(Number.isInteger(t) && t >= 0 && t < 4 && t !== i)) throw new RuleError("needTarget");
       out.target = t;
