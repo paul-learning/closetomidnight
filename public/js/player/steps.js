@@ -3,6 +3,8 @@ import { T, fmt } from "../util.js";
 import { cardEffects, cardName, crisisName, goalText, nation, offerEffects, powerName, responseEffects, responseName, tag } from "../names.js";
 
 const C = T.client;
+/** Mit gespeichertem Zug beginnt die Seite auf der Übersicht, sonst beim ersten Schritt. */
+export const startStep = d => d.myMove ? stepsFor(d).length - 1 : 0;
 export const stepsFor = d => ["krise", "aktion", ...(d.offer ? ["telefon"] : []), "akte", "uebersicht"];
 const option = (name, value, checked, dis, body, extraClass = "") =>
   `<label class="opt ${extraClass}"><input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""} ${dis}><span>${body}</span></label>`;
@@ -54,13 +56,18 @@ export const STEPS = {
     const vote = d.crisis.responses.find(r => r.id === m.vote), card = me.hand.find(c => c.id === m.cardId);
     const target = card && m.target !== undefined ? d.players[m.target] : null;
     const pk = me.pk - (card?.effCost ?? 0) + (card?.pk ?? 0) + (m.acceptOffer && d.offer ? d.offer.pk : 0);
-    const row = (st, title, text) => `<tr><td><b>${title}</b><br><span class="hint">${text}</span></td><td>${dis ? "" : `<button class="link" data-step="${steps.indexOf(st)}">${C.edit}</button>`}</td></tr>`;
+    // Eine Kachel je Entscheidung; antippen öffnet nur diesen Schritt, „Zur Übersicht“ führt zurück
+    const row = (st, title, text) => {
+      const body = `<span class="t">${title}</span><span class="c">${text}</span>`;
+      return dis ? `<div class="tile">${body}</div>`
+        : `<button class="tile" data-hub="${steps.indexOf(st)}">${body}<span class="go">${C.edit}<span aria-hidden="true"> ›</span></span></button>`;
+    };
     const extras = [m.veto && C.sumVeto, m.accuse !== undefined && fmt(C.accuseOption, { nation: nation(d.players[m.accuse].nation) }), m.defect && C.sumDefect].filter(Boolean);
-    return `<table class="table summary">
-      ${row("krise", C.sumCouncil, vote ? `${responseName(d.crisis, vote.id)}<br>${responseEffects(vote, d.crisis, d.rules)}` : C.abstain)}
-      ${row("aktion", C.sumCard, card ? `${target ? fmt(C.sumAgainst, { card: cardName(card), target: nation(target.nation) }) : cardName(card)}<br>${cardEffects(card)}` : C.noCard)}
-      ${d.offer ? row("telefon", C.sumPhone, m.acceptOffer ? `${fmt(C.sumAccepted, { power: powerName(d.offer.power) })}<br>${offerEffects(d.offer)}` : C.sumDeclined) : ""}
-      ${row("akte", C.sumFile, extras.length ? extras.join("<br>") : C.sumNothing)}
-    </table><p class="hint">${fmt(C.sumPk, { pk: `<b>${pk}</b>` })}</p>`;
+    return `<div class="tiles">
+      ${row("krise", C.sumCouncil, vote ? `${responseName(d.crisis, vote.id)}<span class="d">${responseEffects(vote, d.crisis, d.rules)}</span>` : C.abstain)}
+      ${row("aktion", C.sumCard, card ? `${target ? fmt(C.sumAgainst, { card: cardName(card), target: nation(target.nation) }) : cardName(card)}<span class="d">${cardEffects(card)}</span>${card.kind === "interaktion" && !target ? `<span class="warn">${C.sumNeedTarget}</span>` : ""}` : C.noCard)}
+      ${d.offer ? row("telefon", C.sumPhone, m.acceptOffer ? `${fmt(C.sumAccepted, { power: powerName(d.offer.power) })}<span class="d">${offerEffects(d.offer)}</span>` : C.sumDeclined) : ""}
+      ${row("akte", C.sumFile, extras.length ? extras.map(x => `<span class="x">${x}</span>`).join("") : C.sumNothing)}
+    </div><p class="hint">${fmt(C.sumPk, { pk: `<b>${pk}</b>` })}</p>`;
   },
 };

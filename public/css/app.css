@@ -109,13 +109,23 @@ details summary { cursor: pointer; color: var(--mute); }
 .tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--amber); }
 .stepper { display: flex; gap: 4px; list-style: none; padding: 0; margin: 16px 0 0; }
 .stepper li { flex: 1; }
-.stepper button { width: 100%; height: 6px; padding: 0; border: 0; border-radius: 3px; background: var(--rule); cursor: pointer; font-size: 0; }
-.stepper .done button { background: var(--mute); }
-.stepper .now button { background: var(--amber); }
+/* Der Balken ist 6px hoch, die Tippfläche 24px */
+.stepper button { position: relative; width: 100%; height: 24px; padding: 0; border: 0; background: none; cursor: pointer; font-size: 0; }
+.stepper button::after { content: ""; position: absolute; left: 0; right: 0; top: 9px; height: 6px; border-radius: 3px; background: var(--rule); }
+.stepper .done button::after { background: var(--mute); }
+.stepper .now button::after { background: var(--amber); }
 .link { background: none; border: 0; color: var(--amber); font-weight: 600; cursor: pointer; padding: 4px 6px; text-decoration: underline; }
 #help { border: 1.5px solid var(--rule); border-radius: 50%; width: 28px; height: 28px; text-decoration: none; margin-left: 6px; padding: 0; }
-.summary td { vertical-align: top; }
-.summary td:last-child { width: 1%; white-space: nowrap; }
+.tiles { display: grid; gap: 8px; }
+.tile { display: block; width: 100%; text-align: left; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 3px; background: var(--steel-2); color: var(--text); }
+button.tile { cursor: pointer; }
+button.tile:hover, button.tile:focus-visible { border-color: var(--amber); }
+.tile .t { display: block; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--mute); }
+.tile .c { display: block; margin-top: 2px; font-weight: 600; }
+.tile .d, .tile .x { display: block; font-weight: 400; font-size: .86rem; }
+.tile .d { color: var(--mute); }
+.tile .warn { display: block; margin-top: 4px; font-size: .86rem; font-weight: 600; color: var(--amber); }
+.tile .go { display: block; margin-top: 6px; font-size: .86rem; color: var(--amber); }
 .intro { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
 .intro .stencil { font-size: 2.6rem; line-height: 1; color: var(--amber); margin-bottom: 16px; }
 .intro p { font-size: 1.1rem; max-width: 34em; }

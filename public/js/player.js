@@ -1,12 +1,12 @@
 // Spielerseite: Zustand, Darstellung und Speichern. Inhalte der Schritte und Reiter stehen in player/.
 import { $, $$, T, esc, fmt, api } from "./util.js";
-import { STEPS, stepsFor } from "./player/steps.js";
+import { STEPS, startStep, stepsFor } from "./player/steps.js";
 import { allianceTab, header, incomingBox, intelBox, paperTab, resultTab } from "./player/tabs.js";
 import { renderIntro, seenIntro } from "./player/intro.js";
 import { dismissPush, enablePush, pushCard, pushState, syncPush } from "./player/push.js";
 
 const C = T.client;
-const ui = { data: null, draft: null, error: "", tab: "zug", step: 0, intro: -1, key: "", push: "hidden" };
+const ui = { data: null, draft: null, error: "", tab: "zug", step: 0, fromHub: false, intro: -1, key: "", push: "hidden" };
 
 function moveTab(d, locked) {
   if (locked) return `<h2>${C.lockedTitle}</h2><p class="hint">${fmt(C.lockedHint, { hour: d.rules.resolveHour })}</p>${STEPS.uebersicht(d, ui.draft, "disabled")}`;
@@ -21,6 +21,11 @@ function bar(d, locked) {
   if (d.over || d.cancelled || ui.tab !== "zug") { el.hidden = true; return; }
   const steps = stepsFor(d), last = ui.step === steps.length - 1;
   el.hidden = false;
+  // Von der Übersicht aus geöffnet: ein Knopf zurück statt Zurück/Weiter durch alle Schritte
+  if (!locked && ui.fromHub && !last) {
+    el.innerHTML = `<div class="inner"><span class="status"></span><button class="btn" id="hub">${C.toOverview}</button></div>`;
+    return;
+  }
   el.innerHTML = locked
     ? `<div class="inner"><span class="status">${C.locked}</span><button class="btn ghost" id="edit">${C.edit}</button></div>`
     : `<div class="inner"><button class="btn ghost" id="back" ${ui.step === 0 ? "disabled" : ""}>${C.back}</button>
@@ -43,10 +48,12 @@ function render() {
 }
 
 function bind(d, locked) {
-  const go = i => { ui.step = i; render(); window.scrollTo({ top: $(".tabs").offsetTop - 8 }); };
+  const go = (i, fromHub = false) => { ui.step = i; ui.fromHub = fromHub; render(); window.scrollTo({ top: $(".tabs").offsetTop - 8 }); };
   $("#back")?.addEventListener("click", () => go(ui.step - 1));
   $("#next")?.addEventListener("click", () => go(ui.step + 1));
   $("#lock")?.addEventListener("click", () => save(true));
+  $("#hub")?.addEventListener("click", () => go(stepsFor(d).length - 1));
+  $$("[data-hub]").forEach(b => b.addEventListener("click", () => go(Number(b.dataset.hub), true)));
   $("#edit")?.addEventListener("click", () => { ui.draft._editing = true; ui.step = stepsFor(d).length - 1; render(); });
   $("#help").addEventListener("click", () => { ui.intro = 0; render(); });
   $("#push-enable")?.addEventListener("click", async e => {
@@ -56,7 +63,7 @@ function bind(d, locked) {
     render();
   });
   $("#push-dismiss")?.addEventListener("click", () => { dismissPush(); ui.push = "hidden"; render(); });
-  $$("[data-step]").forEach(b => b.addEventListener("click", () => { if (locked) ui.draft._editing = true; go(Number(b.dataset.step)); }));
+  $$("[data-step]").forEach(b => b.addEventListener("click", () => go(Number(b.dataset.step))));
   $$("[data-tab]").forEach(b => b.addEventListener("click", () => { ui.tab = b.dataset.tab; render(); }));
   $$("#app input, #app select").forEach(el => el.addEventListener("change", () => {
     const n = el.name, v = el.type === "checkbox" ? el.checked : el.value;
@@ -83,6 +90,7 @@ async function save(lock) {
   if (!lock && awaitingTarget(ui.data, ui.draft)) { ui.error = ""; return render(); }
   if (saving) { queued = { lock: !!queued?.lock || lock }; return; }
   saving = true;
+  const day = ui.data.day;
   try {
     for (;;) {
       ui.error = "";
@@ -94,7 +102,7 @@ async function save(lock) {
         // Den gespeicherten Stand (z. B. nach einem Tageswechsel bereinigt) nur übernehmen, wenn sich nichts mehr geändert hat
         if (!queued && JSON.stringify(current) === sent) {
           ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : editing };
-          if (lock) ui.step = 0;
+          if (lock) ui.fromHub = false;
         }
       } catch (e) {
         ui.error = e.message;
@@ -106,14 +114,20 @@ async function save(lock) {
       if (!lock && awaitingTarget(ui.data, ui.draft)) break;
     }
   } finally { saving = false; }
+  if (ui.data.day !== day) newDay(); // Tag wurde inzwischen aufgelöst
   render();
 }
+
+/** Neuer Tag: von vorn (bzw. Übersicht, falls schon etwas gespeichert ist). */
+function newDay() { ui.step = startStep(ui.data); ui.fromHub = false; }
 
 export async function startPlayer(key) {
   ui.key = key;
   const load = async () => {
+    const day = ui.data?.day;
     ui.data = await api(`/api/p/${key}`);
     ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) };
+    if (ui.data.day !== day) newDay();
     render();
   };
   const first = api(`/api/p/${key}`); // parallel zur Push-Abfrage
@@ -125,6 +139,7 @@ export async function startPlayer(key) {
   if (!cancelled) syncPush(key).catch(() => {}); // still im Hintergrund, die Seite wartet nicht darauf
   ui.data = await first;
   ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) };
+  ui.step = startStep(ui.data);
   render();
   // Bei Rückkehr zur Seite neu laden (neuer Tag, andere Spieler), aber nicht mitten im Bearbeiten
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !ui.draft?._editing && ui.intro < 0) load().catch(() => {}); });
