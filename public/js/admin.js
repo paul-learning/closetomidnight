@@ -10,9 +10,10 @@ function render() {
   const d = data, all = d.players.every(p => p.locked), running = !d.over && !d.cancelled;
   const status = p => p.locked ? `<span class="ok">${C.statusLocked}</span>` : p.saved ? C.statusDraft : C.statusNone;
   $("#app").innerHTML = `
+    <p><a class="link" href="/admin">${C.ovBack}</a></p>
     <header class="who"><h1>${C.adminTitle}</h1><span class="meta">${fmt(C.dayOf, { day: d.day, days: d.days })}${d.cancelled ? ` · ${C.cancelledShort}` : d.over ? ` · ${C.ended}` : ""}</span></header>
     ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ""}
-    ${d.cancelled ? `<div class="err" role="status">${C.cancelledAdmin} <a class="link" href="/">${C.toStart}</a></div>` : ""}
+    ${d.cancelled ? `<div class="err" role="status">${C.cancelledAdmin} <a class="link" href="/admin">${C.ovBack}</a></div>` : ""}
     ${d.cancelled ? "" : `<h2>${C.linksTitle}</h2><p class="hint">${C.linksHint}</p>
     ${d.players.map((p, i) => `<div class="field"><b>${nation(p.nation)}</b> · ${status(p)}
       <div class="copy"><input type="text" name="name${i}" value="${esc(p.name)}" aria-label="${fmt(C.nameLabel, { nation: nation(p.nation) })}"></div>

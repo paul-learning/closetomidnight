@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { CONFIG } from "../config.ts";
 import type { GameState, Move } from "../engine/index.ts";
 
-export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null; cancelled: boolean }
+export interface GameRow { id: string; adminKey: string; state: GameState; bots: boolean; lastResolved: string | null; lastReminded: string | null; cancelled: boolean; created: number }
 export interface PlayerRow { token: string; gameId: string; idx: number; name: string; hasPassword?: boolean }
 export interface SavedMove { move: Move; locked: boolean }
 export interface PushSub { endpoint: string; gameId: string; idx: number; p256dh: string; auth: string }
@@ -17,6 +17,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS papers (game_id TEXT, day INTEGER, text TEXT, PRIMARY KEY (game_id, day));
   CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, game_id TEXT, idx INTEGER, p256dh TEXT, auth TEXT, created INTEGER);
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+  CREATE TABLE IF NOT EXISTS admin_sessions (token_hash TEXT PRIMARY KEY, expires INTEGER);
 `);
 // Alte Datenbanken: ungenutzte Spalte aus einer früheren Version entfernen
 if ((db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c => c.name === "chat_id")) db.exec("ALTER TABLE games DROP COLUMN chat_id");
@@ -26,7 +27,7 @@ if (!(db.prepare("PRAGMA table_info(games)").all() as { name: string }[]).some(c
 if (!(db.prepare("PRAGMA table_info(players)").all() as { name: string }[]).some(c => c.name === "pw_hash")) db.exec("ALTER TABLE players ADD COLUMN pw_hash TEXT");
 
 const toGame = (r: any): GameRow | undefined => r && {
-  id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded, cancelled: !!r.cancelled,
+  id: r.id, adminKey: r.admin_key, state: JSON.parse(r.state), bots: !!r.bots, lastResolved: r.last_resolved, lastReminded: r.last_reminded, cancelled: !!r.cancelled, created: r.created ?? 0,
 };
 // Der Hash selbst verlässt store.ts nur über passwordHash(), für die Anmeldung.
 const toPlayer = (r: any): PlayerRow | undefined => r && { token: r.token, gameId: r.game_id, idx: r.idx, name: r.name, hasPassword: r.pw_hash != null };
@@ -48,6 +49,18 @@ export const store = {
   gameByAdminKey: (key: string) => toGame(db.prepare("SELECT * FROM games WHERE admin_key = ?").get(key)),
   /** Das zuletzt angelegte Spiel (auch abgebrochen); die Startseite zeigt nur dieses, nie ein älteres. */
   latestGame: () => toGame(db.prepare("SELECT * FROM games ORDER BY created DESC, rowid DESC LIMIT 1").get()),
+  /** Alle Spiele, neueste zuerst (Verwaltung). */
+  allGames: () => db.prepare("SELECT * FROM games ORDER BY created DESC, rowid DESC").all().map(toGame) as GameRow[],
+  /** Spiel samt allem, was dazugehört, endgültig entfernen. */
+  deleteGame(id: string) {
+    store.transaction(() => {
+      for (const t of ["moves", "papers", "push_subs", "players"]) db.prepare(`DELETE FROM ${t} WHERE game_id = ?`).run(id);
+      db.prepare("DELETE FROM games WHERE id = ?").run(id);
+    });
+  },
+  /** Alle gespeicherten Züge eines Spiels, nach Tag und Spieler (für den Verlauf). */
+  allMoves: (gameId: string) => (db.prepare("SELECT day, idx, move, locked FROM moves WHERE game_id = ? ORDER BY day, idx").all(gameId) as any[])
+    .map(r => ({ day: r.day as number, idx: r.idx as number, move: JSON.parse(r.move) as Move, locked: !!r.locked })),
   /** Spiele, die noch laufen: nicht beendet, nicht abgebrochen. */
   activeGames: () => db.prepare("SELECT * FROM games WHERE json_extract(state, '$.over') = 0 AND cancelled = 0").all().map(toGame) as GameRow[],
   /** Nur laufende Spiele; ein beendetes bleibt beendet. */
@@ -82,6 +95,13 @@ export const store = {
   deletePushSubsOf: (gameId: string, idx: number) => db.prepare("DELETE FROM push_subs WHERE game_id = ? AND idx = ?").run(gameId, idx),
   pushSubs: (gameId: string) => (db.prepare("SELECT * FROM push_subs WHERE game_id = ?").all(gameId) as any[])
     .map(r => ({ endpoint: r.endpoint, gameId: r.game_id, idx: r.idx, p256dh: r.p256dh, auth: r.auth }) as PushSub),
+  // ---- Anmeldung der Spielleitung (nur Hash des Cookie-Werts) ----
+  addAdminSession: (hash: string, expires: number) => {
+    db.prepare("DELETE FROM admin_sessions WHERE expires < ?").run(Date.now());
+    db.prepare("INSERT INTO admin_sessions (token_hash, expires) VALUES (?, ?)").run(hash, expires);
+  },
+  adminSessionValid: (hash: string) => !!db.prepare("SELECT 1 FROM admin_sessions WHERE token_hash = ? AND expires > ?").get(hash, Date.now()),
+  deleteAdminSession: (hash: string) => db.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").run(hash),
   // ---- Server-Einstellungen (z. B. VAPID-Schlüssel) ----
   setting: (key: string) => (db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined)?.value,
   setSetting: (key: string, value: string) => db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, value),

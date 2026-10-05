@@ -11,7 +11,7 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".css": "text/css"
 const BINARY = new Set([".png"]);
 
 // Alles außer den reinen Server-Abschnitten
-const { errors: _e, push: _u, paper: _p, prompt: _q, ...clientStrings } = T;
+const { errors: _e, push: _u, paper: _p, prompt: _q, history: _h, ...clientStrings } = T;
 const STRINGS_JS = `window.T = ${JSON.stringify(clientStrings)};`;
 
 export const serveStrings = (res: ServerResponse) => send(res, 200, STRINGS_JS, "text/javascript");

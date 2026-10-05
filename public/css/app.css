@@ -70,6 +70,11 @@ button, select, input { font: inherit; }
 
 .secret li { margin: 6px 0; }
 .secret .vp { color: var(--amber); font-weight: 600; }
+/* Verwaltung: ein Spiel pro Karte */
+.game { background: var(--steel-2); border: 1px solid var(--rule); border-radius: 3px; padding: 14px; margin-top: 12px; }
+.game .title { font-weight: 700; }
+.game .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.game .actions .btn { flex: 1 1 auto; text-align: center; text-decoration: none; }
 .danger { border: 1px dashed var(--rule); padding: 12px; border-radius: 3px; margin-top: 12px; }
 .danger select { width: 100%; padding: 8px; margin-top: 6px; background: var(--steel-2); color: var(--text); border: 1px solid var(--rule); border-radius: 2px; }
 

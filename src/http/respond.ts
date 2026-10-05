@@ -7,8 +7,8 @@ export class HttpError extends Error {
   constructor(status: number, message: string) { super(message); this.status = status; }
 }
 
-export function send(res: ServerResponse, status: number, body: string, type = "application/json") {
-  res.writeHead(status, { "Content-Type": `${type}; charset=utf-8`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+export function send(res: ServerResponse, status: number, body: string, type = "application/json", extraHeaders: Record<string, string> = {}) {
+  res.writeHead(status, { "Content-Type": `${type}; charset=utf-8`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extraHeaders });
   res.end(body);
 }
 

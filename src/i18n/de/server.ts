@@ -14,6 +14,8 @@ export const server = {
     noPassword: "Für dich gibt es noch kein Passwort. Frag die Spielleitung.",
     noGame: "Es läuft gerade kein Spiel.",
     cancelled: "Dieses Spiel wurde von der Spielleitung abgebrochen.",
+    notLoggedIn: "Bitte melde dich als Spielleitung an.",
+    cannotDelete: "Ein laufendes Spiel lässt sich nicht löschen. Brich es zuerst ab.",
     notFound: "Nicht gefunden.",
     badRequest: "Die Anfrage war ungültig.",
   },

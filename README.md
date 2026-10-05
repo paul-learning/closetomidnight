@@ -52,18 +52,20 @@ Auf dem Server außerdem:
 - Sicherung, z. B. nächtlich per cron: `sqlite3 data/fvz.sqlite ".backup data/backup-$(date +%F).sqlite"`
 - Ob die KI-Zeitung funktioniert und wie viele Spieler Benachrichtigungen aktiviert haben, zeigt die Spielleitung unter „Verbindungen“.
 
-## Ein Spiel anlegen
+## Spiele verwalten
 
-1. `BASE_URL` öffnen, Admin-Passwort und die vier Namen eingeben.
-2. Du landest auf der Spielleitung. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt.
+1. `BASE_URL` öffnen, „Spielleitung“ wählen, Admin-Passwort eingeben. Du landest in der **Verwaltung** (`/admin`). Das Gerät bleibt 30 Tage angemeldet („Abmelden“ oben rechts beendet das).
+2. Dort unter „Neues Spiel anlegen“ die vier Namen eingeben. Läuft noch ein Spiel, wird es dabei abgebrochen – es läuft immer nur eins.
+3. „Öffnen“ führt zur Seite des Spiels. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt.
    „Passwort erneuern“ sperrt jemanden aus: neues Passwort **und** neuer Link, angemeldete Geräte müssen sich neu anmelden, seine Benachrichtigungen werden abgeschaltet.
-3. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Du selbst meldest dich dort als „Spielleitung“ mit dem Admin-Passwort an.
-4. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin, falls jemand lieber den Link nimmt.
-5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
-6. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
-7. „Spiel abbrechen“ (Spielleitung) beendet ein Spiel sofort: keine Auflösung, keine Erinnerungen, keine Züge mehr; die Zeitung bleibt lesbar. Ein neues Spiel anzulegen bricht ein laufendes ebenfalls ab – es läuft immer nur eins.
+4. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin.
+5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du auf der Seite des Spiels früher auflösen. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
+6. In der Verwaltung hat jedes Spiel:
+   - **Spiel abbrechen** (nur laufende): sofort Schluss, keine Auflösung, keine Erinnerungen, keine Züge mehr; die Zeitung bleibt lesbar.
+   - **Verlauf exportieren**: eine Textdatei (Markdown) mit dem ganzen Spiel Tag für Tag, inklusive der geheimen Züge, der Zeitungen und des Ergebnisses.
+   - **Löschen** (nur beendete oder abgebrochene): entfernt das Spiel samt Spielern, Zügen, Zeitungen und Benachrichtigungen endgültig. Vorher exportieren, wenn du es behalten willst.
 
-Die Startseite zeigt immer das zuletzt angelegte Spiel, ohne Anmeldung aber nur Nationen und Spieltag, keine Namen. Passwörter liegen nur als Hash (scrypt) in der Datenbank. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
+Die Startseite zeigt das zuletzt angelegte Spiel (ohne Anmeldung nur Nationen und Spieltag, keine Namen); ist es abgebrochen, bietet sie nur die Anmeldung der Spielleitung an. Ein beendetes Spiel bleibt für die Spieler sichtbar, bis du es löschst – so sehen alle das Ergebnis und wer der Brandstifter war. Passwörter liegen nur als Hash (scrypt) in der Datenbank, die Anmeldung der Spielleitung als Hash im Cookie-Speicher. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
 
 ## Benachrichtigungen und Zeitung teilen
 
@@ -87,7 +89,7 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/i18n/` | Alle sichtbaren Texte. `de/content.ts` (Inhaltsnamen), `de/client.ts` (Oberfläche), `de/newspaper.ts` (Zeitung, KI-Auftrag), `de/server.ts` (Fehler, Benachrichtigungen). |
 | `src/engine/` | Reine Spiellogik, kein Text, keine Datenbank, kein Netz. `state.ts` (Zustand, Abfragen), `setup.ts` (Spielstart, Angebote austeilen), `phases.ts` (Phasen eines Tages), `resolve.ts` (Ablauf eines Tages), `scoring.ts` (Spielende), `validate.ts` (Zugprüfung), `index.ts` (einzige Schnittstelle nach außen). |
 | `src/bots/` | Bot-Spieler (Simulator und Ersatz für fehlende Züge). |
-| `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
+| `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `adminSession.ts` (Anmeldung der Spielleitung), `history.ts` (Verlauf exportieren), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
 | `src/integrations/` | Außenwelt: `mistral.ts`, `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
 | `src/http/` | `server.ts` (Routing, Fehler), `routes/` (eine Datei je Bereich), `respond.ts`, `static.ts`, `rateLimit.ts`. |
@@ -95,7 +97,7 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
 | `deploy/` | `deploy.sh` (läuft auf dem Server), `EINRICHTEN.md`. |
 | `src/tools/` | `simulate.ts`, `selftest.ts`, `pushtest.ts`. |
-| `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
+| `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild) und `js/admin/overview.js` (Verwaltung aller Spiele), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
 
 Typische Änderungen:
 

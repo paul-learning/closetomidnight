@@ -10,6 +10,9 @@ const { store } = await import("../game/store.ts");
 const { createGame } = await import("../game/registration.ts");
 const { cancelGame, resolveGame, saveMove, GameCancelled } = await import("../game/service.ts");
 const { lobby, login } = await import("../game/login.ts");
+const { gameHistory } = await import("../game/history.ts");
+const { deleteGame, CannotDelete } = await import("../game/service.ts");
+const { startAdminSession, isAdminSession, endAdminSession } = await import("../game/adminSession.ts");
 
 const newGame = () => {
   const { adminKey } = createGame({ names: ["A", "B", "C", "D"], bots: false });
@@ -30,7 +33,7 @@ test("abgebrochenes Spiel: keine Auflösung, keine Züge, Startseite leer", asyn
   assert.equal(store.game(g.id)!.state.day, 1);
   assert.throws(() => saveMove(store.game(g.id)!, 0, { vote: null, cardId: null }, true), GameCancelled);
   assert.deepEqual(lobby(), { game: null });
-  assert.deepEqual(await login("admin", "test"), { ok: false, reason: "noGame" });
+  assert.deepEqual(await login(0, "egal"), { ok: false, reason: "noGame" });
   assert.deepEqual(store.activeGames(), []);
 });
 
@@ -55,4 +58,37 @@ test("laufendes Spiel wird normal aufgelöst", async () => {
   await resolveGame(g.id);
   assert.equal(store.game(g.id)!.state.day, 2);
   assert.equal(store.papers(g.id).length, 1);
+});
+
+test("Verlauf enthält geheime Züge, Zeitung und Ergebnis", async () => {
+  const g = newGame();
+  store.saveMove(g.id, 1, 0, { vote: g.state.crisis.responses[0].id, cardId: null, acceptOffer: true }, true);
+  await resolveGame(g.id);
+  const text = gameHistory(store.game(g.id)!);
+  assert.match(text, /^# Fünf vor Zwölf – Spielverlauf/);
+  assert.match(text, /\*\*Teutonien:\*\* A/);                       // Spielername
+  assert.match(text, /## Tag 1: /);
+  assert.match(text, /nimmt das Angebot am roten Telefon an/);        // geheimer Zug
+  assert.match(text, /\*\*Zeitung:\*\*/);
+  assert.match(text, /kein gespeicherter Zug/);
+});
+
+test("löschen: nur beendete oder abgebrochene Spiele, dann ist alles weg", async () => {
+  const g = newGame();
+  assert.throws(() => deleteGame(g.id), CannotDelete);
+  store.saveMove(g.id, 1, 0, { vote: null, cardId: null }, true);
+  cancelGame(g.id);
+  deleteGame(g.id);
+  assert.equal(store.game(g.id), undefined);
+  assert.deepEqual(store.players(g.id), []);
+  assert.deepEqual(store.allMoves(g.id), []);
+});
+
+test("Anmeldung der Spielleitung: gültig, bis sie beendet wird", () => {
+  const t = startAdminSession();
+  assert.ok(isAdminSession(t));
+  assert.ok(!isAdminSession(t + "x"));
+  assert.ok(!isAdminSession(undefined));
+  endAdminSession(t);
+  assert.ok(!isAdminSession(t));
 });

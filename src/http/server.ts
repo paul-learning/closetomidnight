@@ -9,20 +9,20 @@ import { HttpError, json } from "./respond.ts";
 import { serveStatic, serveStrings } from "./static.ts";
 import { adminRoute } from "./routes/admin.ts";
 import { lobbyRoute, loginRoute } from "./routes/login.ts";
-import { newGameRoute } from "./routes/newGame.ts";
+import { adminAreaRoute } from "./routes/adminArea.ts";
 import { playerRoute } from "./routes/player.ts";
 
 async function route(req: IncomingMessage, res: ServerResponse) {
   const url = new URL(req.url ?? "/", CONFIG.baseUrl);
   const [first, second, third, fourth] = url.pathname.split("/").filter(Boolean);
   if (req.method === "GET") {
-    if (!first || first === "p" || first === "a") return serveStatic(res, "index.html");
+    if (!first || first === "p" || first === "a" || (first === "admin" && !second)) return serveStatic(res, "index.html");
     if (first === "strings.js") return serveStrings(res);
     if (first === "css" || first === "js" || first === "icons") return serveStatic(res, url.pathname);
     if (first === "sw.js" || first === "manifest.webmanifest") return serveStatic(res, first);
   }
   if (first === "api") {
-    if (second === "new" && req.method === "POST") return newGameRoute(req, res);
+    if (second === "admin") return adminAreaRoute(req, res, url.pathname.split("/").filter(Boolean).slice(2));
     if (second === "lobby" && req.method === "GET") return lobbyRoute(res);
     if (second === "login" && req.method === "POST") return loginRoute(req, res);
     if (second === "p" && third) return playerRoute(req, res, third, fourth);
