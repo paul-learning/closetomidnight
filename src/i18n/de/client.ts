@@ -79,6 +79,7 @@ export const client = {
     cancelButton: "Spiel abbrechen",
     cancelConfirm: "Spiel wirklich abbrechen? Das lässt sich nicht rückgängig machen.",
     cancelledShort: "abgebrochen",
+    noPaperCancelled: "Es ist keine Ausgabe erschienen.",
     cancelledAdmin: "Dieses Spiel ist abgebrochen.",
     cancelledPlayer: "Die Spielleitung hat dieses Spiel abgebrochen. Die Zeitung bleibt lesbar.",
     statusLocked: "festgelegt", statusDraft: "Entwurf", statusNone: "noch nichts",

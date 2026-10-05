@@ -28,10 +28,11 @@ export async function resolveGame(gameId: string): Promise<void> {
     const saved = store.moves(gameId, s.day);
     const moves = s.players.map((_, i) => saved[i]?.move ?? (game.bots ? botMove(s, i, "taktiker", Math.random) : { vote: null, cardId: null }));
     const next = resolveDay(s, moves);
-    store.saveState(gameId, next, localNow().date);
     const report = next.history.at(-1)!;
-    const text = await writePaper(next, report);
-    store.savePaper(gameId, report.day, text);
+    const text = await writePaper(next, report); // kann dauern (KI)
+    // Während die Zeitung entstand, abgebrochen? Dann nichts speichern und niemanden benachrichtigen.
+    if (store.isCancelled(gameId)) return;
+    store.transaction(() => { store.saveState(gameId, next, localNow().date); store.savePaper(gameId, report.day, text); });
     await notifyNewEdition(gameId, next);
   } finally {
     resolving.delete(gameId);
