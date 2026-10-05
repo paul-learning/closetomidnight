@@ -48,11 +48,9 @@ for e in prod staging; do
 done
 docker ps >/dev/null && echo "Docker OK"
 
-# Deploy-Skript installieren (liegt bewusst außerhalb der Klone).
-# Die zweite Zeile ist nur nötig, solange der Pipeline-PR noch nicht gemergt ist.
+# Deploy-Skript installieren (liegt bewusst außerhalb der Klone)
 git -C ~/fvz/prod fetch -q origin
-git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh 2>/dev/null \
-  || git -C ~/fvz/prod show origin/ci-pipeline:deploy/deploy.sh > ~/fvz/deploy.sh
+git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh
 chmod 700 ~/fvz/deploy.sh
 
 # Zwei Schlüssel: einer nur für Staging, einer nur für Prod
