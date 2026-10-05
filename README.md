@@ -14,7 +14,15 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 - `npm run simulate` – Balance-Simulator mit Bots
 - `npm run check` – TypeScript-Typprüfung (braucht `npm install`)
 
-## Auf dem Server (Docker)
+## Deployment
+
+- Pull Request → Tests → automatisch auf Staging (game-staging…).
+- Merge auf master → Tests → automatisch auf Produktion.
+- Zurückrollen, Prod-Daten nach Staging kopieren usw.: Actions → „Betrieb“ → „Run workflow“.
+
+Einmalige Einrichtung (Server und GitHub): [`deploy/EINRICHTEN.md`](deploy/EINRICHTEN.md).
+
+## Auf dem Server von Hand (Docker)
 
 ```bash
 git clone <repo> fvz && cd fvz
@@ -79,6 +87,8 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/integrations/` | Außenwelt: `mistral.ts`, `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
 | `src/http/` | `server.ts` (Routing, Fehler), `routes/` (eine Datei je Bereich), `respond.ts`, `static.ts`, `rateLimit.ts`. |
 | `src/main.ts` | Startpunkt. |
+| `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
+| `deploy/` | `deploy.sh` (läuft auf dem Server), `EINRICHTEN.md`. |
 | `src/tools/` | `simulate.ts`, `selftest.ts`, `pushtest.ts`. |
 | `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
 

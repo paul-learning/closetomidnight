@@ -1,0 +1,73 @@
+# Tests bei jedem Pull Request und jedem Push auf master.
+# Pull Request (aus diesem Repo, nicht aus Forks) → Staging. Merge auf master → Produktion.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Bei PRs genau den Commit testen, der danach auf Staging geht (nicht den Merge-Commit).
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+  staging:
+    needs: tests
+    # Forks und Dependabot bekommen ohnehin keine Secrets; die Bedingung macht es ausdrücklich.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://game-staging.paulsplaygroundvm.de
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          key: ${{ secrets.DEPLOY_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          user: ${{ vars.DEPLOY_USER }}
+          known-hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          command: deploy ${{ github.event.pull_request.head.sha }}
+
+  production:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://game.paulsplaygroundvm.de
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/ssh-deploy
+        with:
+          key: ${{ secrets.DEPLOY_KEY }}
+          host: ${{ vars.DEPLOY_HOST }}
+          user: ${{ vars.DEPLOY_USER }}
+          known-hosts: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          command: deploy ${{ github.sha }}
