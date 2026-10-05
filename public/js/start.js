@@ -10,6 +10,7 @@ const ui = { lobby: null, who: null, error: "" };
 // Dieses Gerät merkt sich die letzte Anmeldung (Spieler: eigener Link, Spielleitung: /admin). Ohne Speicher geht es auch.
 const remembered = () => { try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; } };
 const remember = v => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch {} };
+export const forgetLogin = () => remember(null);
 
 function roleOption(value, name, detail) {
   return `<label class="opt"><input type="radio" name="who" value="${value}" ${String(ui.who) === String(value) ? "checked" : ""}>

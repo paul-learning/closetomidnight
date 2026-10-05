@@ -1,11 +1,10 @@
 // Spielablauf: Züge speichern, Tage auflösen, Zeitung verteilen. Verbindet Engine, Speicher und Integrationen.
-import { resolveDay } from "../engine/index.ts";
-import type { GameRow } from "./store.ts";
-import { validateMove } from "../engine/index.ts";
+import { resolveDay, validateMove } from "../engine/index.ts";
 import { botMove } from "../bots/bots.ts";
 import { notifyNewEdition } from "./notifications.ts";
 import { writePaper } from "../newspaper/paper.ts";
 import { store } from "./store.ts";
+import type { GameRow } from "./store.ts";
 import { localNow } from "./time.ts";
 
 export class GameCancelled extends Error {}

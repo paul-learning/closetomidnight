@@ -2,8 +2,8 @@
 # Deploy-Skript auf dem Server. Wird von GitHub Actions über SSH aufgerufen.
 #
 # Jeder Schlüssel in ~/.ssh/authorized_keys ist auf genau eine Umgebung festgelegt:
-#   restrict,command="/home/wire/fvz/deploy.sh staging" ssh-ed25519 AAAA… fvz-deploy-staging
-#   restrict,command="/home/wire/fvz/deploy.sh prod"    ssh-ed25519 AAAA… fvz-deploy-prod
+#   restrict,command="/home/<user>/fvz/deploy.sh staging" ssh-ed25519 AAAA… fvz-deploy-staging
+#   restrict,command="/home/<user>/fvz/deploy.sh prod"    ssh-ed25519 AAAA… fvz-deploy-prod
 # Der Befehl kommt aus SSH_ORIGINAL_COMMAND:
 #   deploy <commit>   diesen Commit bauen und starten (prod: nur Commits aus master, staging: aus einem Branch dieses Repos)
 #   rollback          eine Version zurück

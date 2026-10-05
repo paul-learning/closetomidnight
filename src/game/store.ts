@@ -77,8 +77,7 @@ export const store = {
   cancelGame: (id: string) => db.prepare("UPDATE games SET cancelled = 1 WHERE id = ? AND json_extract(state, '$.over') = 0").run(id),
   player: (token: string) => toPlayer(db.prepare("SELECT * FROM players WHERE token = ?").get(token)),
   players: (gameId: string) => db.prepare("SELECT * FROM players WHERE game_id = ? ORDER BY idx").all(gameId).map(toPlayer) as PlayerRow[],
-  /** Liest nur die Abbruch-Markierung, z. B. während einer laufenden Auflösung. */
-  /** true auch, wenn es das Spiel nicht mehr gibt (inzwischen gelöscht). */
+  /** Liest nur die Abbruch-Markierung, z. B. während einer laufenden Auflösung. true auch, wenn es das Spiel nicht mehr gibt (inzwischen gelöscht). */
   isCancelled: (id: string) => { const r = db.prepare("SELECT cancelled FROM games WHERE id = ?").get(id) as { cancelled: number } | undefined; return !r || !!r.cancelled; },
   saveState(gameId: string, state: GameState, resolvedOn: string) {
     db.prepare("UPDATE games SET state = ?, last_resolved = ? WHERE id = ?").run(JSON.stringify(state), resolvedOn, gameId);

@@ -1,4 +1,5 @@
 // Spielverlauf als lesbarer Text (Markdown) für die Spielleitung: Tag für Tag, mit allen geheimen Zügen.
+import { CONFIG } from "../config.ts";
 import { clockTime } from "../engine/index.ts";
 import type { Move } from "../engine/index.ts";
 import { T, fmt } from "../i18n/index.ts";
@@ -17,7 +18,7 @@ export function gameHistory(g: GameRow): string {
   const nationOf = (idx: number) => nation(s.players[idx].nation);
   const status = g.cancelled ? fmt(H.statusCancelled, { day: s.day }) : s.over ? fmt(H.statusOver, { day: s.history.at(-1)?.day ?? s.day })
     : fmt(H.statusRunning, { day: s.day, days: BALANCE.days });
-  const out = [H.title, "", fmt(H.created, { date: new Date(g.created || Date.now()).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" }), status }), "", H.players];
+  const out = [H.title, "", fmt(H.created, { date: new Date(g.created || Date.now()).toLocaleDateString("de-DE", { timeZone: CONFIG.timeZone }), status }), "", H.players];
   for (const p of players) out.push(fmt(H.player, { nation: nationOf(p.idx), name: p.name }));
 
   // played: Karten, die die Engine an diesem Tag wirklich ausgeführt hat (öffentlicher Tagesbericht); undefined = Tag nicht aufgelöst

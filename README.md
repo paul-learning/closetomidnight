@@ -8,9 +8,9 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 
 1. `.env.example` nach `.env` kopieren (für den Test reicht `ADMIN_SECRET=test`).
 2. `npm start` – oder in VS Code: „Ausführen und Debuggen“ → „Spiel starten“ (F5).
-3. http://localhost:8080 öffnen, Admin-Passwort eingeben, Spiel anlegen.
+3. http://localhost:8080 öffnen, „Spielleitung“ wählen, Admin-Passwort eingeben, in der Verwaltung ein Spiel anlegen.
 
-- `npm test` – Selbsttests (Texte vollständig, Engine deterministisch, Zugprüfung, Push-Verschlüsselung gegen RFC 8291)
+- `npm test` – alle Tests: Regeln und Engine (`selftest`), Web-Push gegen RFC 8291 (`pushtest`), Spielbetrieb mit Datenbank (`gametest`), alte Datenbanken (`migrationtest`)
 - `npm run simulate` – Balance-Simulator mit Bots
 - `npm run check` – TypeScript-Typprüfung (braucht `npm install`)
 
@@ -18,11 +18,22 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 
 - Pull Request → Tests → automatisch auf Staging (game-staging…).
 - Merge auf master → Tests → automatisch auf Produktion.
-- Zurückrollen, Prod-Daten nach Staging kopieren usw.: Actions → „Betrieb“ → „Run workflow“.
+- Zurückrollen, Prod-Daten nach Staging kopieren, Status: Actions → „Betrieb“ → „Run workflow“.
+- Startet eine neue Prod-Version nicht, setzt der Server von selbst die vorige wieder in Gang.
 
-Einmalige Einrichtung (Server und GitHub): [`deploy/EINRICHTEN.md`](deploy/EINRICHTEN.md).
+Auf dem Server liegen `~/fvz/prod` und `~/fvz/staging` (Git-Klone, je mit eigener `.env` und `compose.server.yml`, nicht im Repo) und `~/fvz/deploy.sh`. GitHub erreicht den Server nur über zwei SSH-Schlüssel, die jeweils auf eine Umgebung festgelegt sind und nur `deploy.sh` aufrufen dürfen.
 
-## Auf dem Server von Hand (Docker)
+**Ändert sich `deploy/deploy.sh`**, nach dem Merge einmal auf dem Server neu installieren (es läuft nicht aus dem Klon):
+
+```bash
+git -C ~/fvz/prod fetch -q origin && git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh
+```
+
+Server oder GitHub neu einrichten: die Anleitung von damals steht im Git-Verlauf, [`deploy/EINRICHTEN.md` @ 93a7ae6](https://github.com/paul-learning/closetomidnight/blob/93a7ae6/deploy/EINRICHTEN.md).
+
+## Ohne CI betreiben (Docker)
+
+Für eine einzelne Installation ohne Staging reicht die `docker-compose.yml` aus dem Repo:
 
 ```bash
 git clone <repo> fvz && cd fvz
@@ -41,13 +52,11 @@ fvz.example.com {
 
 Die Datenbank liegt in `./data/fvz.sqlite`.
 
-**Bestehende Installation aktualisieren:** Früher lief der Container als root, die Dateien in `data/` gehören deshalb root. Einmalig vor dem Neustart: `sudo chown -R 1000:1000 data`, dann `docker compose up -d --build`.
-
-Auf dem Server außerdem:
+## Auf dem Server
 
 - In `.env`: ein langes, zufälliges `ADMIN_SECRET` (z. B. `openssl rand -base64 24`), `BASE_URL` mit https und `TRUST_PROXY=1`.
 - `chmod 600 .env` – nur du darfst die Schlüssel lesen.
-- Schlüssel tauschen: `.env` ändern, dann `docker compose up -d`.
+- Schlüssel tauschen: `.env` ändern, dann `docker compose up -d`. Ein neues `ADMIN_SECRET` meldet die Spielleitung überall ab.
 - Nach zehn falschen Passwörtern (Spieler oder Admin) ist die Adresse für 15 Minuten gesperrt.
 - Sicherung, z. B. nächtlich per cron: `sqlite3 data/fvz.sqlite ".backup data/backup-$(date +%F).sqlite"`
 - Ob die KI-Zeitung funktioniert und wie viele Spieler Benachrichtigungen aktiviert haben, zeigt die Spielleitung unter „Verbindungen“.
@@ -65,7 +74,7 @@ Auf dem Server außerdem:
    - **Verlauf exportieren**: eine Textdatei (Markdown) mit dem ganzen Spiel Tag für Tag, inklusive der geheimen Züge, der Zeitungen und des Ergebnisses.
    - **Löschen** (nur beendete oder abgebrochene): entfernt das Spiel samt Spielern, Zügen, Zeitungen und Benachrichtigungen endgültig. Vorher exportieren, wenn du es behalten willst.
 
-Die Startseite zeigt das zuletzt angelegte Spiel (ohne Anmeldung nur Nationen und Spieltag, keine Namen); ist es abgebrochen, bietet sie nur die Anmeldung der Spielleitung an. Ein beendetes Spiel bleibt für die Spieler sichtbar, bis du es löschst – so sehen alle das Ergebnis und wer der Brandstifter war. Passwörter liegen nur als Hash (scrypt) in der Datenbank, die Anmeldung der Spielleitung als Hash im Cookie-Speicher. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
+Die Startseite zeigt das zuletzt angelegte Spiel (ohne Anmeldung nur Nationen und Spieltag, keine Namen); ist es abgebrochen, bietet sie nur die Anmeldung der Spielleitung an. Ein beendetes Spiel bleibt für die Spieler sichtbar, bis du es löschst – so sehen alle das Ergebnis und wer der Brandstifter war. Passwörter liegen nur als Hash (scrypt) in der Datenbank; von der Anmeldung der Spielleitung kennt die Datenbank ebenfalls nur einen Hash, der Wert selbst steht im Cookie.
 
 ## Benachrichtigungen und Zeitung teilen
 
@@ -86,17 +95,17 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | --- | --- |
 | `src/config.ts` | Einstellungen und Zugangsdaten. Einzige Stelle, die `process.env` liest. |
 | `src/rules/` | Statische Regeln: `types.ts`, `balance.ts` (Stellschrauben), `nations.ts` (Sonderfähigkeiten als Daten), `content.ts` (Krisen, Karten, Angebote, Ziele – nur IDs und Zahlen). |
-| `src/i18n/` | Alle sichtbaren Texte. `de/content.ts` (Inhaltsnamen), `de/client.ts` (Oberfläche), `de/newspaper.ts` (Zeitung, KI-Auftrag), `de/server.ts` (Fehler, Benachrichtigungen). |
+| `src/i18n/` | Alle sichtbaren Texte. `de/content.ts` (Inhaltsnamen), `de/client.ts` (Oberfläche), `de/newspaper.ts` (Zeitung, KI-Auftrag), `de/server.ts` (Fehler, Benachrichtigungen), `de/history.ts` (Verlauf-Export). |
 | `src/engine/` | Reine Spiellogik, kein Text, keine Datenbank, kein Netz. `state.ts` (Zustand, Abfragen), `setup.ts` (Spielstart, Angebote austeilen), `phases.ts` (Phasen eines Tages), `resolve.ts` (Ablauf eines Tages), `scoring.ts` (Spielende), `validate.ts` (Zugprüfung), `index.ts` (einzige Schnittstelle nach außen). |
 | `src/bots/` | Bot-Spieler (Simulator und Ersatz für fehlende Züge). |
 | `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `adminSession.ts` (Anmeldung der Spielleitung), `history.ts` (Verlauf exportieren), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
 | `src/integrations/` | Außenwelt: `mistral.ts`, `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
-| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (eine Datei je Bereich), `respond.ts`, `static.ts`, `rateLimit.ts`. |
+| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`. |
 | `src/main.ts` | Startpunkt. |
 | `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
-| `deploy/` | `deploy.sh` (läuft auf dem Server), `EINRICHTEN.md`. |
-| `src/tools/` | `simulate.ts`, `selftest.ts`, `pushtest.ts`. |
+| `deploy/` | `deploy.sh` (läuft auf dem Server). |
+| `src/tools/` | `simulate.ts` (Balance), Tests: `selftest.ts`, `pushtest.ts`, `gametest.ts`, `migrationtest.ts`. |
 | `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild) und `js/admin/overview.js` (Verwaltung aller Spiele), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
 
 Typische Änderungen:

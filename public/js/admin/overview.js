@@ -2,6 +2,7 @@
 // Zugang über das Anmelde-Cookie der Spielleitung; ohne geht es zurück zur Startseite.
 import { $, $$, T, esc, fmt, api } from "../util.js";
 import { nation } from "../names.js";
+import { forgetLogin } from "../start.js";
 
 const C = T.client;
 let games = [], error = "", busy = false;
@@ -53,7 +54,7 @@ function bind() {
   $$("[data-delete]").forEach(b => b.addEventListener("click", () => { if (confirm(C.ovDeleteConfirm)) act(`/api/admin/games/${b.dataset.delete}/delete`, {}); }));
   $("#logout").addEventListener("click", async () => {
     await api("/api/admin/logout", {}).catch(() => {});
-    try { localStorage.removeItem("fvz.login"); } catch {}
+    forgetLogin();
     location.href = "/";
   });
 }

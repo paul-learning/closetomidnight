@@ -39,10 +39,13 @@ for (const [name, sql] of Object.entries(OLD_SCHEMAS)) {
     const dir = mkdtempSync(join(tmpdir(), "fvz-mig-"));
     try {
       const path = join(dir, "fvz.sqlite");
-      new DatabaseSync(path).exec(sql);
+      // Jede Verbindung wieder schließen: Unter Windows lässt sich die Datei sonst nicht löschen
+      const old = new DatabaseSync(path); old.exec(sql); old.close();
       assert.doesNotThrow(() => openWithCurrentCode(path));
       if (name.startsWith("admin_sessions")) {
-        const row = new DatabaseSync(path).prepare("SELECT secret_fp FROM admin_sessions WHERE token_hash = 'alt'").get();
+        const db = new DatabaseSync(path);
+        const row = db.prepare("SELECT secret_fp FROM admin_sessions WHERE token_hash = 'alt'").get();
+        db.close();
         assert.equal(row, undefined, "alte Anmeldung ohne Fingerabdruck wird beim nächsten Anmelden entfernt");
       }
     } finally { rmSync(dir, { recursive: true, force: true }); }
