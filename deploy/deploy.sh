@@ -28,9 +28,13 @@ main() {
 
   exec 9>"$base/.lock-$env"
   flock -w 900 9 || die "ein anderes Deployment läuft noch"
+  if [[ "$action" == copy-data ]]; then   # schreibt in Staging, braucht also auch dessen Sperre
+    exec 8>"$base/.lock-staging"
+    flock -w 900 8 || die "auf Staging läuft noch ein Deployment"
+  fi
 
   case "$action" in
-    deploy)    deploy "$env" "$dir" "${arg:-}" ;;
+    deploy)    deploy "$env" "$dir" "$base" "${arg:-}" ;;
     rollback)  [[ -z "${arg:-}" ]] || die "rollback braucht keine Angabe"; rollback "$env" "$dir" "$base" ;;
     copy-data) [[ "$env" == prod ]] || die "copy-data nur mit dem Prod-Schlüssel"; copy_data "$base" ;;
     status)    status "$env" "$dir" "$base" ;;
@@ -43,8 +47,10 @@ log() { echo "[$(date '+%F %T')] $*"; }
 
 history_file() { echo "$1/.history-$2"; }
 
+# Achtung: deploy und rollback rufen switch_to links von "||" auf. Dort gilt "set -e" nicht,
+# deshalb prüft switch_to jeden Schritt selbst.
 deploy() {
-  local env="$1" dir="$2" sha="$3"
+  local env="$1" dir="$2" base="$3" sha="$4" hist last
   [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die "Commit muss ein voller 40-stelliger Hash sein"
   git -C "$dir" fetch --quiet --prune origin
   git -C "$dir" cat-file -e "$sha^{commit}" 2>/dev/null || die "Commit $sha gibt es im Repo nicht"
@@ -55,11 +61,13 @@ deploy() {
   fi
   local prev; prev="$(git -C "$dir" rev-parse HEAD)"
   switch_to "$env" "$dir" "$sha" || {
-    log "Neue Version startet nicht – zurück auf ${prev:0:7}"
-    switch_to "$env" "$dir" "$prev" || true
+    log "Neue Version läuft nicht – zurück auf ${prev:0:7}"
+    switch_to "$env" "$dir" "$prev" || die "Deployment von ${sha:0:7} fehlgeschlagen, und ${prev:0:7} startet auch nicht – bitte von Hand nachsehen"
     die "Deployment von ${sha:0:7} fehlgeschlagen, ${prev:0:7} läuft wieder"
   }
-  echo "$(date -Is) $sha" >>"$(history_file "$(dirname "$dir")" "$env")"
+  hist="$(history_file "$base" "$env")"
+  last="$( [[ -f "$hist" ]] && tail -n 1 "$hist" | cut -d' ' -f2 || true)"
+  [[ "$last" == "$sha" ]] || echo "$(date -Is) $sha" >>"$hist"   # gleiche Version nicht doppelt, sonst tut rollback nichts
   log "$env läuft jetzt mit ${sha:0:7}: $(git -C "$dir" log -1 --format=%s "$sha")"
 }
 
@@ -73,25 +81,35 @@ rollback() {
   log "$env zurück auf ${target:0:7}: $(git -C "$dir" log -1 --format=%s "$target")"
 }
 
-# Commit auschecken, Container bauen und starten, prüfen, ob er antwortet.
+# Commit auschecken, Container bauen und starten, prüfen, ob der neu gebaute Container antwortet.
 switch_to() {
-  local env="$1" dir="$2" sha="$3"
+  local env="$1" dir="$2" sha="$3" image
   [[ -z "$(git -C "$dir" status --porcelain --untracked-files=no)" ]] || die "in $dir wurden Dateien von Hand geändert – bitte erst aufräumen"
-  git -C "$dir" checkout --quiet --detach "$sha"
+  git -C "$dir" checkout --quiet --detach "$sha" || return 1
   log "baue $env (${sha:0:7}) …"
-  (cd "$dir" && docker compose up -d --build --quiet-pull 2>&1 | tail -n 5)
-  healthy "$dir"
+  (cd "$dir" && docker compose up -d --build --quiet-pull 2>&1 | tail -n 5; exit "${PIPESTATUS[0]}") || { echo "Bauen oder Starten fehlgeschlagen" >&2; return 1; }
+  image="$(built_image "$dir")" || { echo "Gebautes Image nicht gefunden" >&2; return 1; }
+  healthy "$dir" "$image"
 }
 
+# ID des Images, das docker compose gerade für den Dienst gebaut hat.
+built_image() {
+  local name
+  name="$(cd "$1" && docker compose config --images fvz | head -n 1)" && [[ -n "$name" ]] || return 1
+  docker image inspect --format '{{.Id}}' "$name"
+}
+
+# Wartet, bis der Container antwortet. Mit Image-ID: nur der Container aus genau diesem Image zählt.
 healthy() {
-  local dir="$1" id
-  for _ in $(seq 1 ${HEALTH_TRIES:-30}); do
+  local dir="$1" want="${2:-}" id
+  for _ in $(seq 1 "${HEALTH_TRIES:-30}"); do
     id="$(cd "$dir" && docker compose ps -q fvz 2>/dev/null || true)"
-    if [[ -n "$id" ]] && docker exec "$id" node -e \
+    if [[ -n "$id" ]] && { [[ -z "$want" ]] || [[ "$(docker inspect --format '{{.Image}}' "$id" 2>/dev/null)" == "$want" ]]; } \
+      && docker exec "$id" node -e \
       "fetch('http://127.0.0.1:8080/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))" 2>/dev/null; then
       return 0
     fi
-    sleep ${HEALTH_SLEEP:-2}
+    sleep "${HEALTH_SLEEP:-2}"
   done
   echo "Container antwortet nicht. Letzte Log-Zeilen:" >&2
   (cd "$dir" && docker compose logs --tail 20 fvz >&2) || true
@@ -100,10 +118,12 @@ healthy() {
 
 # Prod-Datenbank als Momentaufnahme nach Staging. Push-Abos werden gelöscht,
 # damit Staging keine echten Spieler benachrichtigt. Die alte Staging-Datenbank bleibt als fvz.sqlite.bak.
+# Läuft unter beiden Sperren (prod und staging). Was auch passiert: Staging wird am Ende wieder gestartet.
 copy_data() {
   local base="$1" prod_id
   prod_id="$(cd "$base/prod" && docker compose ps -q fvz)"
   [[ -n "$prod_id" ]] || die "Prod läuft nicht"
+  trap "copy_cleanup '$base' '$prod_id'" EXIT
   log "Momentaufnahme von Prod …"
   docker exec "$prod_id" node -e "
     const fs = require('node:fs'); const { DatabaseSync } = require('node:sqlite');
@@ -116,10 +136,16 @@ copy_data() {
     const db = new DatabaseSync('/from/.export.sqlite'); db.exec('DELETE FROM push_subs'); db.close();
     if (fs.existsSync('/to/fvz.sqlite')) fs.copyFileSync('/to/fvz.sqlite', '/to/fvz.sqlite.bak');
     for (const f of ['/to/fvz.sqlite-wal', '/to/fvz.sqlite-shm', '/to/fvz.sqlite-journal']) fs.rmSync(f, { force: true });
-    fs.copyFileSync('/from/.export.sqlite', '/to/fvz.sqlite'); fs.rmSync('/from/.export.sqlite');"
+    fs.copyFileSync('/from/.export.sqlite', '/to/fvz.sqlite');"
   (cd "$base/staging" && docker compose start fvz >/dev/null)
   healthy "$base/staging" || die "Staging startet nach dem Kopieren nicht"
   log "Prod-Daten liegen jetzt auf Staging (ohne Push-Abos). Alte Staging-Daten: staging/data/fvz.sqlite.bak"
+}
+
+copy_cleanup() {
+  local base="$1" prod_id="$2"
+  docker exec "$prod_id" rm -f /data/.export.sqlite >/dev/null 2>&1 || true
+  (cd "$base/staging" && docker compose start fvz >/dev/null 2>&1) || echo "WARNUNG: Staging ließ sich nicht wieder starten" >&2
 }
 
 status() {

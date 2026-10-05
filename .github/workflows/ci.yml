@@ -14,7 +14,10 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
+      # Bei PRs genau den Commit testen, der danach auf Staging geht (nicht den Merge-Commit).
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -25,8 +28,11 @@ jobs:
 
   staging:
     needs: tests
-    # Forks bekommen ohnehin keine Secrets; die Bedingung macht es zusätzlich ausdrücklich.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    # Forks und Dependabot bekommen ohnehin keine Secrets; die Bedingung macht es ausdrücklich.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -36,6 +42,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: ./.github/actions/ssh-deploy
         with:
           key: ${{ secrets.DEPLOY_KEY }}

@@ -33,22 +33,29 @@ jobs:
       group: deploy-staging
       cancel-in-progress: false
     steps:
+      # Der Schritt mit dem Schlüssel kommt immer aus dem Branch, von dem „Betrieb“ gestartet wurde,
+      # nie aus dem gewählten Branch. Der gewählte Branch landet nur in branch/ und wird dort getestet.
       - uses: actions/checkout@v5
+      - if: inputs.aktion == 'Branch auf Staging'
+        uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.aktion == 'Branch auf Staging' && inputs.branch || github.ref }}
+          ref: ${{ inputs.branch }}
+          path: branch
       - if: inputs.aktion == 'Branch auf Staging'
         uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: branch/package-lock.json
       - if: inputs.aktion == 'Branch auf Staging'
+        working-directory: branch
         run: npm ci && npm run check && npm test
       - id: cmd
         env:
           AKTION: ${{ inputs.aktion }}
         run: |
           case "$AKTION" in
-            "Branch auf Staging") echo "command=deploy $(git rev-parse HEAD)" >> "$GITHUB_OUTPUT" ;;
+            "Branch auf Staging") echo "command=deploy $(git -C branch rev-parse HEAD)" >> "$GITHUB_OUTPUT" ;;
             "Staging eine Version zurück") echo "command=rollback" >> "$GITHUB_OUTPUT" ;;
             *) echo "command=status" >> "$GITHUB_OUTPUT" ;;
           esac

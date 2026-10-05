@@ -16,13 +16,40 @@ Sicherheit:
 
 ## 1. Auf dem Server (SSH)
 
-Am Stück kopieren. Setzt voraus, dass `~/fvz/prod` und `~/fvz/staging` Git-Klone dieses Repos sind.
+Setzt voraus, dass `~/fvz/prod` und `~/fvz/staging` Git-Klone dieses Repos sind und jeweils so eingerichtet:
+
+- `.env` enthält `COMPOSE_FILE=compose.server.yml`. Dadurch nimmt `docker compose` dort **nicht** die `docker-compose.yml` aus dem Repo (die belegt Port 8080 auf dem Server, das ginge für zwei Umgebungen nicht gut), sondern
+- `compose.server.yml` (nicht im Repo, in `.git/info/exclude` eingetragen): ohne Port, im Docker-Netz `proxy`, Caddy erreicht die Container über ihren Namen:
+
+```yaml
+services:
+  fvz:
+    build: .
+    container_name: fvz-prod      # bzw. fvz-staging
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+```
+
+Dann am Stück kopieren:
 
 ```bash
-# Prüfen: Git-Klone, Docker ohne sudo
-git -C ~/fvz/prod remote get-url origin && git -C ~/fvz/staging remote get-url origin && docker ps >/dev/null && echo "OK"
+# Prüfen: Git-Klone, eigene Compose-Datei je Umgebung, Docker ohne sudo
+for e in prod staging; do
+  git -C ~/fvz/$e remote get-url origin || echo "FEHLT: $e ist kein Git-Klon"
+  grep -q '^COMPOSE_FILE=compose.server.yml' ~/fvz/$e/.env || echo "FEHLT: COMPOSE_FILE in ~/fvz/$e/.env"
+  [ -f ~/fvz/$e/compose.server.yml ] || echo "FEHLT: ~/fvz/$e/compose.server.yml"
+done
+docker ps >/dev/null && echo "Docker OK"
 
-# Deploy-Skript installieren (liegt bewusst außerhalb der Klone)
+# Deploy-Skript installieren (liegt bewusst außerhalb der Klone).
+# Die zweite Zeile ist nur nötig, solange der Pipeline-PR noch nicht gemergt ist.
 git -C ~/fvz/prod fetch -q origin
 git -C ~/fvz/prod show origin/master:deploy/deploy.sh > ~/fvz/deploy.sh 2>/dev/null \
   || git -C ~/fvz/prod show origin/ci-pipeline:deploy/deploy.sh > ~/fvz/deploy.sh
