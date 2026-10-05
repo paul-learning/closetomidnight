@@ -27,3 +27,6 @@ export function responseEffects(r, crisis, rules) {
   if (r.bonus) s += " · " + fmt(C.responseBonus, { nation: nation(r.bonus.nation), vp: r.bonus.vp });
   return s;
 }
+
+/** Kennzeichnung sauber/schmutzig für Karten und Ziele. */
+export const tag = kind => `<span class="tag ${kind}">${T.kinds[kind]}</span>`;

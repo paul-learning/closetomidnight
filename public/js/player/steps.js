@@ -1,10 +1,9 @@
 // Die Schritte eines Tageszugs: Krise, Aktion, rotes Telefon, Geheimakte, Übersicht.
 import { T, fmt } from "../util.js";
-import { cardEffects, cardName, crisisName, goalText, nation, offerEffects, powerName, responseEffects, responseName } from "../names.js";
+import { cardEffects, cardName, crisisName, goalText, nation, offerEffects, powerName, responseEffects, responseName, tag } from "../names.js";
 
 const C = T.client;
 export const stepsFor = d => ["krise", "aktion", ...(d.offer ? ["telefon"] : []), "akte", "uebersicht"];
-const tag = kind => `<span class="tag ${kind}">${T.kinds[kind]}</span>`;
 const option = (name, value, checked, dis, body, extraClass = "") =>
   `<label class="opt ${extraClass}"><input type="radio" name="${name}" value="${value}" ${checked ? "checked" : ""} ${dis}><span>${body}</span></label>`;
 

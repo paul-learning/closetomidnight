@@ -42,6 +42,8 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
       hand: p.hand.map(c => ({ ...c, effCost: cardCost(p, c) })),
       goals: p.defector ? [{ id: "defector", kind: "schmutzig", vp: 0 }] : goalInfo(p.goals),
       intel: p.intel,
+      // Was der eigene Leak am zuletzt aufgelösten Tag ergeben hat (eigener Kasten oben auf der Seite)
+      intelNew: p.intel.filter(x => x.day !== undefined && x.day === s.history.at(-1)?.day).map(x => ({ ...goalInfo([x.goal])[0], nation: x.nation, day: x.day })),
       vetoAvailable: canVeto(p),
       canDefect: canDefect(s, i),
     },

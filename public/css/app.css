@@ -65,6 +65,9 @@ button, select, input { font: inherit; }
 .incoming { border: 2px solid var(--red); border-radius: 3px; padding: 12px 14px; margin: 14px 0 4px; background: #2e2322; }
 .incoming ul { margin: 6px 0 0; padding-left: 18px; }
 .incoming li + li { margin-top: 4px; }
+.intel-new { border: 2px solid var(--amber); background: var(--steel-2); border-radius: 3px; padding: 12px 14px; margin: 14px 0 4px; }
+.intel-new ul { margin: 6px 0 0; padding-left: 18px; }
+.intel-new .hint { margin: 6px 0 0; }
 
 /* Rotes Telefon */
 .phone { border: 2px solid var(--red); border-radius: 3px; padding: 14px; background: #2e2322; }
