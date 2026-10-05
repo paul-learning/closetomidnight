@@ -33,6 +33,7 @@ Schreibe die Ausgabe zu Tag {day} auf Deutsch, höchstens 180 Wörter:
 - 3–5 kurze Meldungen zu dem, was passiert ist (nenne, wer wie abgestimmt und welche Karte gespielt hat)
 - ein erfundenes, kurzes Zitat einer Großmacht
 - eine Zeile „Die Uhr steht auf {time}“
+Schreibe reinen Text ohne Markdown: keine Sternchen, Rauten oder Unterstriche zur Hervorhebung. Die Schlagzeile steht in der ersten Zeile, jede Meldung in einer eigenen Zeile, die mit „• “ beginnt.
 Erfinde KEINE neuen Ereignisse, Zahlen oder Folgen. Verrate nie, wer ein Angebot angenommen hat; sprich nur von Gerüchten.
 Greife frühere Tage auf, wenn es passt (Verrat, Wortbruch, Wiederholungen).`,
     today: "Heute:",
@@ -54,6 +55,6 @@ Greife frühere Tage auf, wenn es passt (Verrat, Wortbruch, Wiederholungen).`,
     tomorrow: "Morgige Krise: {crisis}",
     earlier: "Frühere Tage:",
     earlierDay: "Tag {day}: {crisis}; Beschluss: {decision}; Karten: {cards}",
-    test: "Antworte mit einer einzigen, absurd-dramatischen Schlagzeile auf Deutsch über eine Weltuntergangsuhr.",
+    test: "Antworte mit einer einzigen, absurd-dramatischen Schlagzeile auf Deutsch über eine Weltuntergangsuhr. Reiner Text, ohne Markdown.",
   },
 };
