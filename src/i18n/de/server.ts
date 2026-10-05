@@ -13,6 +13,7 @@ export const server = {
     wrongPassword: "Das Passwort stimmt nicht.",
     noPassword: "Für dich gibt es noch kein Passwort. Frag die Spielleitung.",
     noGame: "Es läuft gerade kein Spiel.",
+    cancelled: "Dieses Spiel wurde von der Spielleitung abgebrochen.",
     notFound: "Nicht gefunden.",
     badRequest: "Die Anfrage war ungültig.",
   },

@@ -18,7 +18,7 @@ function moveTab(d, locked) {
 
 function bar(d, locked) {
   const el = $("#bar");
-  if (d.over || ui.tab !== "zug") { el.hidden = true; return; }
+  if (d.over || d.cancelled || ui.tab !== "zug") { el.hidden = true; return; }
   const steps = stepsFor(d), last = ui.step === steps.length - 1;
   el.hidden = false;
   el.innerHTML = locked
@@ -31,11 +31,12 @@ function bar(d, locked) {
 
 function render() {
   const d = ui.data;
-  if (ui.intro >= 0) return renderIntro(ui.intro, d.rules, p => { ui.intro = p; render(); }, () => { ui.intro = -1; render(); });
+  if (ui.intro >= 0 && !d.cancelled) return renderIntro(ui.intro, d.rules, p => { ui.intro = p; render(); }, () => { ui.intro = -1; render(); });
   const locked = d.myMove?.locked && !ui.draft._editing;
   ui.step = Math.min(ui.step, stepsFor(d).length - 1);
-  const body = ui.tab === "zeitung" ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d) : d.over ? resultTab(d) : moveTab(d, locked);
-  $("#app").innerHTML = header(d, ui.tab) + pushCard(ui.push) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
+  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d) : d.over ? resultTab(d) : moveTab(d, locked);
+  const notice = d.cancelled ? `<div class="err" role="status">${C.cancelledPlayer} <a class="link" href="/">${C.toStart}</a></div>` : "";
+  $("#app").innerHTML = header(d, ui.tab) + notice + (d.cancelled ? "" : pushCard(ui.push)) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
   bar(d, locked);
   bind(d, locked);
 }

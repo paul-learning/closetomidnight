@@ -22,5 +22,5 @@ export async function playerRoute(req: IncomingMessage, res: ServerResponse, tok
     saveMove(store.game(pl.gameId)!, pl.idx, body.move, !!body.lock);
   }
   const game = store.game(pl.gameId)!;
-  json(res, playerView(game.state, pl.idx, store.players(game.id), store.moves(game.id, game.state.day), store.papers(game.id)));
+  json(res, { ...playerView(game.state, pl.idx, store.players(game.id), store.moves(game.id, game.state.day), store.papers(game.id)), cancelled: game.cancelled });
 }

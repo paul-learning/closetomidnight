@@ -61,6 +61,7 @@ Auf dem Server außerdem:
 4. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin, falls jemand lieber den Link nimmt.
 5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du früher auflösen.
 6. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
+7. „Spiel abbrechen“ (Spielleitung) beendet ein Spiel sofort: keine Auflösung, keine Erinnerungen, keine Züge mehr; die Zeitung bleibt lesbar. Ein neues Spiel anzulegen bricht ein laufendes ebenfalls ab – es läuft immer nur eins.
 
 Die Startseite zeigt immer das zuletzt angelegte Spiel, ohne Anmeldung aber nur Nationen und Spieltag, keine Namen. Passwörter liegen nur als Hash (scrypt) in der Datenbank. Nach zehn falschen Passwörtern ist die Adresse für 15 Minuten gesperrt.
 

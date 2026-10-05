@@ -7,11 +7,12 @@ const C = T.client;
 let data = null, error = "", key = "", testResult = { ai: "" };
 
 function render() {
-  const d = data, all = d.players.every(p => p.locked);
+  const d = data, all = d.players.every(p => p.locked), running = !d.over && !d.cancelled;
   const status = p => p.locked ? `<span class="ok">${C.statusLocked}</span>` : p.saved ? C.statusDraft : C.statusNone;
   $("#app").innerHTML = `
-    <header class="who"><h1>${C.adminTitle}</h1><span class="meta">${fmt(C.dayOf, { day: d.day, days: d.days })}${d.over ? ` · ${C.ended}` : ""}</span></header>
+    <header class="who"><h1>${C.adminTitle}</h1><span class="meta">${fmt(C.dayOf, { day: d.day, days: d.days })}${d.cancelled ? ` · ${C.cancelledShort}` : d.over ? ` · ${C.ended}` : ""}</span></header>
     ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ""}
+    ${d.cancelled ? `<div class="err" role="status">${C.cancelledAdmin} <a class="link" href="/">${C.toStart}</a></div>` : ""}
     <h2>${C.linksTitle}</h2><p class="hint">${C.linksHint}</p>
     ${d.players.map((p, i) => `<div class="field"><b>${nation(p.nation)}</b> · ${status(p)}
       <div class="copy"><input type="text" name="name${i}" value="${esc(p.name)}" aria-label="${fmt(C.nameLabel, { nation: nation(p.nation) })}"></div>
@@ -19,7 +20,9 @@ function render() {
       ${passwordRow(p, i, d.newPassword)}</div>`).join("")}
     <button class="btn ghost" id="names">${C.saveNames}</button>
     <h2>${C.resolveTitle}</h2><p class="hint">${fmt(C.resolveHint, { hour: d.resolveHour })}</p>
-    <button class="btn ${all ? "" : "red"}" id="resolve" ${d.over ? "disabled" : ""}>${all ? C.resolveNow : C.resolveAnyway}</button>
+    <button class="btn ${all ? "" : "red"}" id="resolve" ${running ? "" : "disabled"}>${all ? C.resolveNow : C.resolveAnyway}</button>
+    ${running ? `<div class="danger"><b>${C.cancelTitle}</b><p class="hint">${C.cancelHint}</p>
+      <button class="btn red" id="cancel">${C.cancelButton}</button></div>` : ""}
     <h2>${C.settings}</h2>
     <label class="switch field"><input type="checkbox" id="bots" ${d.bots ? "checked" : ""}> ${C.botsLabel}</label>
     <button class="btn ghost" id="settings">${C.saveSettings}</button>
@@ -37,6 +40,7 @@ function render() {
     e.target.disabled = true; e.target.textContent = C.resolving;
     act("resolve", {});
   });
+  $("#cancel")?.addEventListener("click", () => { if (confirm(C.cancelConfirm)) act("cancel", {}); });
   $("#settings").addEventListener("click", () => act("settings", { bots: $("#bots").checked }));
   $$("[data-share]").forEach(b => b.addEventListener("click", async () => {
     b.disabled = true; b.textContent = C.sharing;
