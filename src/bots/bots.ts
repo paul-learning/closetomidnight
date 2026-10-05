@@ -35,7 +35,7 @@ export function botMove(s: GameState, i: number, persona: Persona, rnd: () => nu
     const harm = (c.steal ?? 0) + (c.sanction ?? 0) * 1.5 + (c.block ? 2 : 0) + Number(c.leak ?? 0) * 0.5;
     const gain = (c.vp ?? 0) + (c.pk ?? 0) * 0.5 + (c.everyonePk ?? 0) * 0.3;
     if (isDef) return c.kind === "sauber" ? -1 : gain + harm + doom;
-    if (!selfish) return doom > 0 ? -1 : clean * 3 + (c.vp ?? 0) * 0.5 + (c.everyonePk ?? 0);
+    if (!selfish) return doom > 0 || c.kind === "interaktion" ? -1 : clean * 3 + (c.vp ?? 0) * 0.5 + (c.everyonePk ?? 0);
     return gain + harm - doom * (danger >= 20 ? 3 : 0.5);
   };
   const reserve = selfish ? 0 : 2;

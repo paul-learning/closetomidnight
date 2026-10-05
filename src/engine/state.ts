@@ -78,7 +78,8 @@ export const clockTime = (t: Record<Track, number>) => {
 export const isMidnight = (s: GameState) => s.over && s.ending !== "vernunft";
 export const topTrack = (s: GameState) => TRACKS.reduce((a, b) => s.tracks[a] >= s.tracks[b] ? a : b);
 
-export const cardCost = (p: Player, c: Card) => Math.max(0, c.cost - (c.tracks?.krieg !== undefined ? NATION_RULES[p.nation].warCardDiscount : 0));
+// Rabatt nie unter 1 Einfluss: sonst würden günstige Kriegskarten gratis
+export const cardCost = (p: Player, c: Card) => c.tracks?.krieg === undefined ? c.cost : Math.max(Math.min(c.cost, 1), c.cost - NATION_RULES[p.nation].warCardDiscount);
 /** Kennt Spieler i schon alle geheimen Ziele von Spieler t? Dann brächte ein Leak gegen t nichts mehr. */
 export const knowsAllGoals = (s: GameState, i: number, t: number) =>
   s.players[t].goals.every(g => s.players[i].intel.some(x => x.nation === s.players[t].nation && x.goal === g));

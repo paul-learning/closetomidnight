@@ -6,7 +6,7 @@ export const content = {
   nations: {
     teutonien: { name: "Teutonien", ability: "Reichste Nation: startet mit 2 Einfluss mehr" },
     gallien: { name: "Gallien", ability: "Einmal pro Spiel: Veto gegen einen Ratsbeschluss" },
-    polonien: { name: "Polonien", ability: "Karten, die Krieg betreffen, kosten 1 Einfluss weniger" },
+    polonien: { name: "Polonien", ability: "Karten, die Krieg betreffen, kosten 1 Einfluss weniger (mindestens 1)" },
     italica: { name: "Italica", ability: "Sieht die Krise von morgen einen Tag früher" },
   },
   powers: {

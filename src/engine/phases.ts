@@ -78,9 +78,10 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
       const unknown = target.goals.filter(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
       for (const goal of unknown.slice(0, Number(c.leak))) p.intel.push({ nation: target.nation, goal, day: rep.day });
     }
-    if (c.everyonePk) s.players.forEach(q => { q.pk += c.everyonePk!; });
     rep.cards.push({ nation: p.nation, card: c.id, target: interactive ? target?.nation : undefined, ...(stolen !== undefined ? { stolen } : {}) });
   }
+  // Einfluss für alle erst nach allen Karten: sonst hinge ein Diebstahl von der Sitzreihenfolge ab
+  for (const play of played) if (play?.c.everyonePk && !blocked.has(play.p)) s.players.forEach(q => { q.pk += play.c.everyonePk!; });
 }
 
 /** 2b. Kosten des Ratsbeschlusses: erst nach den Karten, damit eine festgelegte Karte nie am Beschluss scheitert. */

@@ -22,12 +22,13 @@ export function gameHistory(g: GameRow): string {
   for (const p of players) out.push(fmt(H.player, { nation: nationOf(p.idx), name: p.name }));
 
   // played: Karten, die die Engine an diesem Tag wirklich ausgeführt hat (öffentlicher Tagesbericht); undefined = Tag nicht aufgelöst
-  const moveLines = (day: number, crisis: string, played?: { nation: NationId; card: string }[]) => {
+  const moveLines = (day: number, crisis: string, played?: { nation: NationId; card: string; blocked?: boolean }[]) => {
     const lines = [H.moves];
     for (let idx = 0; idx < s.players.length; idx++) {
       const saved = moves.find(m => m.day === day && m.idx === idx);
       const ran = played && saved?.move.cardId ? played.some(c => c.nation === s.players[idx].nation && c.card === saved.move.cardId) : true;
-      const parts = saved ? describe(saved.move, crisis, nationOf, ran) + (saved.locked ? "" : ` ${H.notLocked}`) : played ? H.noMoveResolved : H.noMove;
+      const fizzled = !!played?.some(c => c.nation === s.players[idx].nation && c.blocked);
+      const parts = saved ? describe(saved.move, crisis, nationOf, ran) + (fizzled ? ` ${H.blocked}` : "") + (saved.locked ? "" : ` ${H.notLocked}`) : played ? H.noMoveResolved : H.noMove;
       lines.push(fmt(H.move, { nation: nationOf(idx), parts }));
     }
     return lines;

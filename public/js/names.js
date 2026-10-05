@@ -9,20 +9,23 @@ export const cardName = c => T.cards[c.id];
 export const powerName = p => T.powers[p].name;
 export const goalText = g => T.goals[g.id ?? g];
 
+/** „+1 Siegpunkt“ statt „+1 Siegpunkte“ */
+export const vpText = n => n === 1 ? C.fx.vpOne : fmt(C.fx.vp, { n });
+
 export function cardEffects(c) {
   const parts = [fmt(C.fx.cost, { n: c.effCost ?? c.cost })];
-  if (c.vp) parts.push(fmt(C.fx.vp, { n: c.vp }));
+  if (c.vp) parts.push(vpText(c.vp));
   if (c.pk) parts.push(fmt(C.fx.pk, { n: c.pk }));
   for (const [t, v] of Object.entries(c.tracks || {})) parts.push(`${T.tracks[t]} ${v > 0 ? "+" : "−"}${Math.abs(v)}`);
   if (c.steal) parts.push(fmt(C.fx.steal, { n: c.steal }));
   if (c.block) parts.push(C.fx.block);
-  if (c.leak) parts.push(Number(c.leak) > 1 ? C.fx.leakAll : C.fx.leak);
+  if (c.leak) parts.push(Number(c.leak) > 1 ? fmt(C.fx.leakMany, { n: Number(c.leak) }) : C.fx.leak);
   if (c.everyonePk) parts.push(fmt(C.fx.everyonePk, { n: c.everyonePk }));
-  if (c.sanction) parts.push(fmt(C.fx.sanction, { n: c.sanction }));
+  if (c.sanction) parts.push(c.sanction === 1 ? C.fx.sanctionOne : fmt(C.fx.sanction, { n: c.sanction }));
   return parts.join(" · ");
 }
 
-export const offerEffects = o => [o.vp && fmt(C.fx.vp, { n: o.vp }), o.pk && fmt(C.fx.pk, { n: o.pk }), `${T.tracks[o.track]} +${o.doom}`].filter(Boolean).join(" · ");
+export const offerEffects = o => [o.vp && vpText(o.vp), o.pk && fmt(C.fx.pk, { n: o.pk }), `${T.tracks[o.track]} +${o.doom}`].filter(Boolean).join(" · ");
 
 export function responseEffects(r, crisis, rules) {
   let s = fmt(C.responseEffects, { cost: r.costEach, reduce: r.reduce, severity: crisis.severity, votes: r.unanimous ? rules.votesNeededStrong : rules.votesNeeded });

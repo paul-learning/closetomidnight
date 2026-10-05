@@ -36,7 +36,7 @@ export const CARDS: Card[] = [
   { id: "notstand", kind: "schmutzig", cost: 0, vp: 2, pk: 2, tracks: { autokratie: 1 } },
   { id: "steuerdumping", kind: "schmutzig", cost: 1, vp: 3, tracks: { kollaps: 1 } },
   { id: "propaganda", kind: "schmutzig", cost: 0, vp: 2, tracks: { autokratie: 1 } },
-  { id: "diaeten", kind: "schmutzig", cost: 0, pk: 3, tracks: { autokratie: 1 } },
+  { id: "diaeten", kind: "schmutzig", cost: 0, pk: 4, tracks: { autokratie: 1 } },
   { id: "soeldner", kind: "schmutzig", cost: 2, vp: 4, tracks: { krieg: 1 } },
   // normal · interaktion
   { id: "erpressung", kind: "interaktion", cost: 2, steal: 2 },
@@ -52,11 +52,11 @@ export const CARDS: Card[] = [
   { id: "marshallplan", kind: "sauber", cost: 5, vp: 3, tracks: { kollaps: -2, krieg: -1 } },
   // krass · schmutzig
   { id: "staatsstreich", kind: "schmutzig", cost: 5, vp: 6, tracks: { autokratie: 1 } },
-  { id: "ruestungsboom", kind: "schmutzig", cost: 5, vp: 5, pk: 3, tracks: { krieg: 1 } },
+  { id: "ruestungsboom", kind: "schmutzig", cost: 5, vp: 5, pk: 2, tracks: { krieg: 1 } },
   { id: "steueroase", kind: "schmutzig", cost: 5, vp: 6, tracks: { kollaps: 1 } },
   { id: "botarmee", kind: "schmutzig", cost: 6, vp: 7, tracks: { autokratie: 1 } },
   // krass · interaktion
-  { id: "handelskrieg", kind: "interaktion", cost: 5, steal: 3, sanction: 2 },
+  { id: "handelskrieg", kind: "interaktion", cost: 5, steal: 2, sanction: 2 },
   { id: "cyberangriff", kind: "interaktion", cost: 5, block: true },
   { id: "doppelagent", kind: "interaktion", cost: 6, leak: 2 },
   { id: "ausweisung", kind: "interaktion", cost: 5, sanction: 3 },
@@ -67,9 +67,9 @@ export const CARDS: Card[] = [
   // richtig krass · schmutzig
   { id: "atomtest", kind: "schmutzig", cost: 7, vp: 9, tracks: { krieg: 2 } },
   { id: "ermaechtigung", kind: "schmutzig", cost: 8, vp: 10, tracks: { autokratie: 2 } },
-  { id: "marskolonie", kind: "schmutzig", cost: 7, vp: 8, pk: 4, tracks: { kollaps: 1 } },
+  { id: "marskolonie", kind: "schmutzig", cost: 7, vp: 7, pk: 2, tracks: { kollaps: 1 } },
   // richtig krass · interaktion
-  { id: "regimewechsel", kind: "interaktion", cost: 8, steal: 3, sanction: 3 },
+  { id: "regimewechsel", kind: "interaktion", cost: 8, steal: 4, sanction: 4 },
   { id: "wahlhack", kind: "interaktion", cost: 7, steal: 3, block: true },
 ];
 

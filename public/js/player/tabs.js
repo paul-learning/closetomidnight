@@ -24,7 +24,7 @@ export function incomingBox(d) {
     const def = d.me.defector, parts = [];
     if (c.blockedMine !== null) parts.push(c.blockedMine ? C.incomingBlocked : C.incomingBlockedNothing);
     if (c.stolen !== null) parts.push(c.stolen > 0 ? fmt(C.incomingSteal, { n: c.stolen }) : C.incomingStealNothing);
-    if (c.vpLost) parts.push(fmt(C.incomingSanction, { n: c.vpLost }));
+    if (c.vpLost) parts.push(c.vpLost === 1 ? C.incomingSanctionOne : fmt(C.incomingSanction, { n: c.vpLost }));
     if (c.leaked) parts.push(c.leaked > 1 ? (def ? C.incomingLeakAllDefector : C.incomingLeakAll) : (def ? C.incomingLeakDefector : C.incomingLeak));
     return fmt(C.incomingCard, vars) + (parts.length ? ": " + parts.join(", ") : "") + ".";
   });
