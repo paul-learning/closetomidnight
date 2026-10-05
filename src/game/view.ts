@@ -7,7 +7,7 @@ import { BALANCE } from "../rules/balance.ts";
 import { GOALS } from "../rules/content.ts";
 import type { PlayerRow, SavedMove } from "./store.ts";
 import { playerUrl } from "./registration.ts";
-import { aiConfigured } from "../integrations/mistral.ts";
+import { aiConfigured, aiLabel } from "../integrations/ai.ts";
 import { subscriberCount, vapidPublicKey } from "./notifications.ts";
 
 const goalInfo = (ids: string[]) => ids.map(id => { const g = GOALS.find(x => x.id === id)!; return { id, kind: g.kind, vp: g.vp }; });
@@ -47,7 +47,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
 export function adminView(s: GameState, game: { id: string; bots: boolean }, players: PlayerRow[], moves: (SavedMove | null)[], papers: { day: number; text: string }[]) {
   return {
     day: s.day, days: BALANCE.days, over: s.over, bots: game.bots, resolveHour: CONFIG.resolveHour,
-    status: { ai: aiConfigured(), aiModel: aiConfigured() ? CONFIG.mistral.model : null, pushPlayers: subscriberCount(game.id) },
+    status: { ai: aiConfigured(), aiModel: aiConfigured() ? aiLabel() : null, pushPlayers: subscriberCount(game.id) },
     players: players.map((pl, i) => ({ name: pl.name, nation: s.players[i].nation, url: playerUrl(pl.token), saved: !!moves[i], locked: !!moves[i]?.locked,
       hasPassword: !!pl.hasPassword })),
     papers: papers.map(p => ({ ...p, clock: clockTime(s.history.find(h => h.day === p.day)?.tracksAfter ?? s.tracks),

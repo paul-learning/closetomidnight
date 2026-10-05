@@ -98,7 +98,7 @@ export const client = {
     testAi: "KI testen", testing: "Teste…",
     testAiOk: "KI antwortet: {sample}",
     testFailed: "Fehlgeschlagen: {detail}",
-    testNoKey: "Kein MISTRAL_API_KEY in der .env gesetzt.",
+    testNoKey: "Keine KI eingerichtet: AI_PROVIDER und AI_API_KEY in der .env setzen ({detail}).",
     paperTitle: "Der Weltuntergangs-Kurier", noPaper: "Noch keine Ausgabe.",
     shareHint: "Jede Ausgabe lässt sich als Bild teilen, z. B. in eure Signal-Gruppe.",
     shareButton: "Tag {day} als Bild teilen", sharing: "Bild wird erstellt…",

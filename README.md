@@ -10,7 +10,7 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 2. `npm start` – oder in VS Code: „Ausführen und Debuggen“ → „Spiel starten“ (F5).
 3. http://localhost:8080 öffnen, „Spielleitung“ wählen, Admin-Passwort eingeben, in der Verwaltung ein Spiel anlegen.
 
-- `npm test` – alle Tests: Regeln und Engine (`selftest`), Web-Push gegen RFC 8291 (`pushtest`), Spielbetrieb mit Datenbank (`gametest`), alte Datenbanken (`migrationtest`)
+- `npm test` – alle Tests: Regeln und Engine (`selftest`), Web-Push gegen RFC 8291 (`pushtest`), Spielbetrieb mit Datenbank (`gametest`), alte Datenbanken (`migrationtest`), KI-Anbindung gegen einen nachgebauten Anbieter (`aitest`)
 - `npm run simulate` – Balance-Simulator mit Bots
 - `npm run check` – TypeScript-Typprüfung (braucht `npm install`)
 
@@ -93,7 +93,22 @@ Die Startseite zeigt das zuletzt angelegte Spiel (ohne Anmeldung nur Nationen un
 
 ## KI-Zeitung (optional)
 
-`MISTRAL_API_KEY` in `.env` setzen. Die KI schreibt nur den Text; alle Zahlen kommen aus der Regel-Engine. Ohne Schlüssel oder bei Fehlern erscheint eine schlichte Zusammenfassung.
+Die KI schreibt nur den Text; alle Zahlen kommen aus der Regel-Engine. Ohne KI oder bei Fehlern erscheint eine schlichte Zusammenfassung. Angebunden wird jeder Anbieter mit OpenAI-kompatibler Schnittstelle. In `.env`:
+
+```
+AI_PROVIDER=gemini
+AI_API_KEY=…
+```
+
+| `AI_PROVIDER` | Schlüssel | Standardmodell | Hinweis |
+| --- | --- | --- | --- |
+| `gemini` | kostenlos über [Google AI Studio](https://aistudio.google.com) | `gemini-flash-latest` | Gratis-Kontingent reicht für eine Zeitung pro Tag bei Weitem; Google darf Gratis-Anfragen zum Training nutzen (hier nur Spielereignisse). |
+| `mistral` | console.mistral.ai | `mistral-small-latest` | |
+| `groq` | console.groq.com | `llama-3.3-70b-versatile` | |
+| `openrouter` | openrouter.ai | – (`AI_MODEL` setzen) | |
+| `ollama` | keiner | – (`AI_MODEL` setzen) | lokales Modell auf dem Server |
+
+`AI_MODEL` wählt ein anderes Modell, `AI_BASE_URL` eine andere Adresse. Ob es klappt, zeigt die Spielleitung unter „Verbindungen“ → „KI testen“. Alte Einstellungen mit `MISTRAL_API_KEY` funktionieren weiter.
 
 ## Aufbau
 
@@ -108,12 +123,12 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/bots/` | Bot-Spieler (Simulator und Ersatz für fehlende Züge). |
 | `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `adminSession.ts` (Anmeldung der Spielleitung), `history.ts` (Verlauf exportieren), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
-| `src/integrations/` | Außenwelt: `mistral.ts`, `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
+| `src/integrations/` | Außenwelt: `ai.ts` (KI über OpenAI-kompatible Schnittstelle), `aiProviders.ts` (Voreinstellungen je Anbieter), `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
 | `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`. |
 | `src/main.ts` | Startpunkt. |
 | `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
 | `deploy/` | `deploy.sh` (läuft auf dem Server). |
-| `src/tools/` | `simulate.ts` (Balance), Tests: `selftest.ts`, `pushtest.ts`, `gametest.ts`, `migrationtest.ts`. |
+| `src/tools/` | `simulate.ts` (Balance), Tests: `selftest.ts`, `pushtest.ts`, `gametest.ts`, `migrationtest.ts`, `aitest.ts`. |
 | `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild) und `js/admin/overview.js` (Verwaltung aller Spiele), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
 
 Typische Änderungen:

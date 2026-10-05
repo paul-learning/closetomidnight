@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 process.env.DB_PATH = ":memory:";
 process.env.ADMIN_SECRET = "test";
 process.env.MISTRAL_API_KEY = "";
+process.env.AI_PROVIDER = "";
 const { store } = await import("../game/store.ts");
 const { createGame } = await import("../game/registration.ts");
 const { cancelGame, resolveGame, saveMove, GameCancelled } = await import("../game/service.ts");

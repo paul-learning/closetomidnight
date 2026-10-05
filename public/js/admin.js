@@ -67,7 +67,7 @@ function passwordRow(p, i, fresh) {
 
 function describeTest(t) {
   if (t.ok) return `<span class="ok">${fmt(C.testAiOk, { sample: esc(t.sample) })}</span>`;
-  const msg = t.reason === "noKey" ? C.testNoKey : fmt(C.testFailed, { detail: esc(t.detail ?? "") });
+  const msg = fmt(t.reason === "noKey" ? C.testNoKey : C.testFailed, { detail: esc(t.detail ?? "") });
   return `<span class="err-text">${msg}</span>`;
 }
 
