@@ -23,7 +23,7 @@ function bar(d, locked) {
   el.hidden = false;
   // Von der Übersicht aus geöffnet: ein Knopf zurück statt Zurück/Weiter durch alle Schritte
   if (!locked && ui.fromHub && !last) {
-    el.innerHTML = `<div class="inner"><span class="status">${C.steps[steps[ui.step]]}</span><button class="btn" id="hub">${C.toOverview}</button></div>`;
+    el.innerHTML = `<div class="inner"><span class="status"></span><button class="btn" id="hub">${C.toOverview}</button></div>`;
     return;
   }
   el.innerHTML = locked
@@ -63,7 +63,7 @@ function bind(d, locked) {
     render();
   });
   $("#push-dismiss")?.addEventListener("click", () => { dismissPush(); ui.push = "hidden"; render(); });
-  $$("[data-step]").forEach(b => b.addEventListener("click", () => { if (locked) ui.draft._editing = true; go(Number(b.dataset.step)); }));
+  $$("[data-step]").forEach(b => b.addEventListener("click", () => go(Number(b.dataset.step))));
   $$("[data-tab]").forEach(b => b.addEventListener("click", () => { ui.tab = b.dataset.tab; render(); }));
   $$("#app input, #app select").forEach(el => el.addEventListener("change", () => {
     const n = el.name, v = el.type === "checkbox" ? el.checked : el.value;
@@ -90,6 +90,7 @@ async function save(lock) {
   if (!lock && awaitingTarget(ui.data, ui.draft)) { ui.error = ""; return render(); }
   if (saving) { queued = { lock: !!queued?.lock || lock }; return; }
   saving = true;
+  const day = ui.data.day;
   try {
     for (;;) {
       ui.error = "";
@@ -101,7 +102,7 @@ async function save(lock) {
         // Den gespeicherten Stand (z. B. nach einem Tageswechsel bereinigt) nur übernehmen, wenn sich nichts mehr geändert hat
         if (!queued && JSON.stringify(current) === sent) {
           ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }), _editing: lock ? false : editing };
-          if (lock) { ui.step = 0; ui.fromHub = false; }
+          if (lock) ui.fromHub = false;
         }
       } catch (e) {
         ui.error = e.message;
@@ -113,8 +114,12 @@ async function save(lock) {
       if (!lock && awaitingTarget(ui.data, ui.draft)) break;
     }
   } finally { saving = false; }
+  if (ui.data.day !== day) newDay(); // Tag wurde inzwischen aufgelöst
   render();
 }
+
+/** Neuer Tag: von vorn (bzw. Übersicht, falls schon etwas gespeichert ist). */
+function newDay() { ui.step = startStep(ui.data); ui.fromHub = false; }
 
 export async function startPlayer(key) {
   ui.key = key;
@@ -122,7 +127,7 @@ export async function startPlayer(key) {
     const day = ui.data?.day;
     ui.data = await api(`/api/p/${key}`);
     ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) };
-    if (ui.data.day !== day) { ui.step = startStep(ui.data); ui.fromHub = false; } // neuer Tag: von vorn bzw. Übersicht
+    if (ui.data.day !== day) newDay();
     render();
   };
   const first = api(`/api/p/${key}`); // parallel zur Push-Abfrage

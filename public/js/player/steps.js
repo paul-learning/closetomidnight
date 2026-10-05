@@ -60,12 +60,12 @@ export const STEPS = {
     const row = (st, title, text) => {
       const body = `<span class="t">${title}</span><span class="c">${text}</span>`;
       return dis ? `<div class="tile">${body}</div>`
-        : `<button class="tile" data-hub="${steps.indexOf(st)}" aria-label="${fmt(C.changeStep, { step: title })}">${body}<span class="go" aria-hidden="true">${C.edit} ›</span></button>`;
+        : `<button class="tile" data-hub="${steps.indexOf(st)}">${body}<span class="go">${C.edit}<span aria-hidden="true"> ›</span></span></button>`;
     };
     const extras = [m.veto && C.sumVeto, m.accuse !== undefined && fmt(C.accuseOption, { nation: nation(d.players[m.accuse].nation) }), m.defect && C.sumDefect].filter(Boolean);
     return `<div class="tiles">
       ${row("krise", C.sumCouncil, vote ? `${responseName(d.crisis, vote.id)}<span class="d">${responseEffects(vote, d.crisis, d.rules)}</span>` : C.abstain)}
-      ${row("aktion", C.sumCard, card ? `${target ? fmt(C.sumAgainst, { card: cardName(card), target: nation(target.nation) }) : cardName(card)}<span class="d">${cardEffects(card)}</span>` : C.noCard)}
+      ${row("aktion", C.sumCard, card ? `${target ? fmt(C.sumAgainst, { card: cardName(card), target: nation(target.nation) }) : cardName(card)}<span class="d">${cardEffects(card)}</span>${card.kind === "interaktion" && !target ? `<span class="warn">${C.sumNeedTarget}</span>` : ""}` : C.noCard)}
       ${d.offer ? row("telefon", C.sumPhone, m.acceptOffer ? `${fmt(C.sumAccepted, { power: powerName(d.offer.power) })}<span class="d">${offerEffects(d.offer)}</span>` : C.sumDeclined) : ""}
       ${row("akte", C.sumFile, extras.length ? extras.map(x => `<span class="x">${x}</span>`).join("") : C.sumNothing)}
     </div><p class="hint">${fmt(C.sumPk, { pk: `<b>${pk}</b>` })}</p>`;

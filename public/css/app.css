@@ -124,6 +124,7 @@ button.tile:hover, button.tile:focus-visible { border-color: var(--amber); }
 .tile .c { display: block; margin-top: 2px; font-weight: 600; }
 .tile .d, .tile .x { display: block; font-weight: 400; font-size: .86rem; }
 .tile .d { color: var(--mute); }
+.tile .warn { display: block; margin-top: 4px; font-size: .86rem; font-weight: 600; color: var(--amber); }
 .tile .go { display: block; margin-top: 6px; font-size: .86rem; color: var(--amber); }
 .intro { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; }
 .intro .stencil { font-size: 2.6rem; line-height: 1; color: var(--amber); margin-bottom: 16px; }
