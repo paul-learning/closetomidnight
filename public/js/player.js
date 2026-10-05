@@ -3,7 +3,7 @@ import { $, $$, T, esc, fmt, api } from "./util.js";
 import { STEPS, stepsFor } from "./player/steps.js";
 import { allianceTab, header, paperTab, resultTab } from "./player/tabs.js";
 import { renderIntro, seenIntro } from "./player/intro.js";
-import { dismissPush, enablePush, pushCard, pushState } from "./player/push.js";
+import { dismissPush, enablePush, pushCard, pushState, syncPush } from "./player/push.js";
 
 const C = T.client;
 const ui = { data: null, draft: null, error: "", tab: "zug", step: 0, intro: -1, key: "", push: "hidden" };
@@ -111,6 +111,7 @@ export async function startPlayer(key) {
     render();
   };
   if (!seenIntro()) ui.intro = 0;
+  syncPush(key).catch(() => {}); // still im Hintergrund, die Seite wartet nicht darauf
   ui.push = await pushState().catch(() => "hidden");
   if (ui.push === "on" || ui.push === "unsupported") ui.push = "hidden";
   await load();

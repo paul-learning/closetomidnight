@@ -33,6 +33,18 @@ export async function enablePush(playerKey, vapidKey) {
   return result === "failed" ? "failed" : "on";
 }
 
+/**
+ * Hat der Browser schon ein Abo, dem Server still noch einmal melden. Nach „Passwort erneuern“ hat der Server
+ * es gelöscht; ohne Abgleich bekäme der Spieler auf demselben Gerät keine Nachrichten mehr und merkte es nicht.
+ * Ein ausgesperrtes Gerät kommt hier nicht durch, weil sein alter Link nicht mehr gilt.
+ */
+export async function syncPush(playerKey) {
+  if (!supported() || Notification.permission !== "granted") return;
+  const reg = await navigator.serviceWorker.getRegistration("/");
+  const sub = await reg?.pushManager.getSubscription();
+  if (sub) await api(`/api/p/${playerKey}/push`, { ...sub.toJSON(), silent: true });
+}
+
 export function dismissPush() { try { localStorage.setItem(DISMISS, "1"); } catch { /* privates Fenster */ } }
 
 /** Kleine Karte über den Reitern. Leer, wenn nichts zu tun ist. */

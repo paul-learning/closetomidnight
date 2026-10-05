@@ -14,7 +14,8 @@ export async function playerRoute(req: IncomingMessage, res: ServerResponse, tok
     const b = await readBody(req);
     const ok = typeof b.endpoint === "string" && isPushEndpoint(b.endpoint) && typeof b.keys?.p256dh === "string" && typeof b.keys?.auth === "string";
     if (!ok) throw new HttpError(400, T.errors.badRequest);
-    return json(res, { result: await subscribe(pl.gameId, pl.idx, { endpoint: b.endpoint, p256dh: b.keys.p256dh, auth: b.keys.auth }) });
+    const sub = { endpoint: b.endpoint, p256dh: b.keys.p256dh, auth: b.keys.auth };
+    return json(res, { result: await subscribe(pl.gameId, pl.idx, sub, { silent: b.silent === true }) });
   }
   if (req.method === "POST" && action === "move") {
     const body = await readBody(req);

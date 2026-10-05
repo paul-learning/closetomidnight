@@ -32,9 +32,14 @@ export function notifyReminder(gameId: string, notLocked: number[], hoursLeft: n
   return deliver(gameId, idx => notLocked.includes(idx), fmt(T.push.reminder, { hours: hoursLeft, hour: CONFIG.resolveHour }));
 }
 
-/** Neues Abo speichern und mit einer Willkommensnachricht bestätigen. */
-export async function subscribe(gameId: string, idx: number, sub: Subscription) {
+/**
+ * Abo speichern und mit einer Willkommensnachricht bestätigen.
+ * silent: nur abgleichen, ohne Nachricht. Die Spielerseite schickt das bei jedem Öffnen, falls der Browser
+ * schon ein Abo hat, der Server aber nicht mehr (z. B. nach „Passwort erneuern“ und neuer Anmeldung).
+ */
+export async function subscribe(gameId: string, idx: number, sub: Subscription, opts: { silent?: boolean } = {}) {
   store.savePushSub({ ...sub, gameId, idx });
+  if (opts.silent) return "saved" as const;
   const token = store.players(gameId).find(p => p.idx === idx)!.token;
   const result = await sendPush(sub, { title: T.push.title, body: T.push.welcome, url: playerUrl(token) }, vapid());
   if (result === "gone") store.deletePushSub(sub.endpoint);
