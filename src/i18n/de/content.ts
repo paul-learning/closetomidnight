@@ -44,7 +44,7 @@ export const content = {
   cards: {
     gipfel: "Friedensgipfel", faktencheck: "Faktencheck-Offensive", pressefreiheit: "Pressefreiheitspaket", konjunktur: "Konjunkturprogramm",
     waffendeal: "Waffendeal mit Moskowien", notstand: "Notstandsgesetze", steuerdumping: "Steuerdumping", propaganda: "Staatsfernsehen ausbauen",
-    erpressung: "Erpressung", leak: "Geheimdienst-Leak",
+    erpressung: "Erpressung", leak: "Geheimdienst-Leak", sanktionen: "Sanktionen",
   } as Record<string, string>,
   goals: {
     "kollaps-niedrig": "Kollaps endet bei 3 oder weniger",

@@ -1,7 +1,7 @@
 // Bot-Spieler: für den Simulator und als Ersatz für fehlende Züge im echten Spiel. Kennt nur Regeln, keine Texte.
 import { TRACKS } from "../rules/types.ts";
 import type { Track } from "../rules/types.ts";
-import { canDefect, cardCost, total } from "../engine/index.ts";
+import { canDefect, cardCost, total, knowsAllGoals } from "../engine/index.ts";
 import type { GameState, Move } from "../engine/index.ts";
 
 export type Persona = "kooperativ" | "egoist" | "taktiker";
@@ -31,7 +31,10 @@ export function botMove(s: GameState, i: number, persona: Persona, rnd: () => nu
   if (isDef) card = affordable.find(c => c.kind === "schmutzig") ?? null;
   else if (!selfish) card = affordable.find(c => c.kind === "sauber" && (c.tracks?.[top] ?? 0) < 0) ?? affordable.find(c => c.kind === "sauber") ?? null;
   else card = affordable.find(c => c.kind === "schmutzig") ?? affordable.find(c => c.kind === "interaktion") ?? affordable[0] ?? null;
-  const target = s.players.map((q, j) => [q.pk, j]).filter(([, j]) => j !== i).sort((a, b) => b[0] - a[0])[0][1];
+  // Ziel: wer am meisten Einfluss hat (öffentlich sichtbar). Bei einem Leak nur, wessen Ziele noch nicht alle bekannt sind.
+  const targets = s.players.map((q, j) => [q.pk, j]).filter(([, j]) => j !== i && !(card?.leak && knowsAllGoals(s, i, j)));
+  if (card?.kind === "interaktion" && !targets.length) card = null;
+  const target = targets.sort((a, b) => b[0] - a[0])[0]?.[1];
 
   // Misstrauensvotum: öffentliche Spuren (schwache Stimmen, späte schmutzige Karten)
   let accuse: number | undefined;

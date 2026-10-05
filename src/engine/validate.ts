@@ -1,8 +1,8 @@
 // Prüft einen eingereichten Zug gegen die Regeln. Fehler tragen einen Code; den Text liefert src/i18n.
-import { canDefect, canVeto, cardCost, offerFor } from "./state.ts";
+import { canDefect, canVeto, cardCost, offerFor, knowsAllGoals } from "./state.ts";
 import type { GameState, Move } from "./state.ts";
 
-export type RuleErrorCode = "gameOver" | "needTarget" | "cannotDefect" | "tooExpensive";
+export type RuleErrorCode = "gameOver" | "needTarget" | "cannotDefect" | "tooExpensive" | "leakKnown";
 export class RuleError extends Error {
   code: RuleErrorCode;
   constructor(code: RuleErrorCode) { super(code); this.code = code; }
@@ -18,9 +18,10 @@ export function validateMove(s: GameState, i: number, input: any): Move {
   if (card) {
     if (cardCost(p, card) > p.pk) throw new RuleError("tooExpensive");
     out.cardId = card.id;
-    if (card.steal || card.leak) {
+    if (card.kind === "interaktion") {
       const t = Number(m.target);
       if (!(Number.isInteger(t) && t >= 0 && t < 4 && t !== i)) throw new RuleError("needTarget");
+      if (card.leak && knowsAllGoals(s, i, t)) throw new RuleError("leakKnown");
       out.target = t;
     }
   }

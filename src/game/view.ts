@@ -1,10 +1,10 @@
 // Was Spieler und Spielleitung sehen dürfen. Nur IDs und Zahlen; die Oberfläche setzt die Texte ein.
 // Geheimnisse anderer (Ziele, Siegpunkte, Angebote, Überläufer) bleiben verborgen, bis das Spiel endet.
 import { CONFIG } from "../config.ts";
-import { canDefect, canVeto, cardCost, clockTime, hasForesight, minutesLeft, offerFor } from "../engine/index.ts";
+import { canDefect, canVeto, cardCost, clockTime, hasForesight, knowsAllGoals, minutesLeft, offerFor } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
-import { GOALS } from "../rules/content.ts";
+import { CARD_POOL, GOALS } from "../rules/content.ts";
 import type { PlayerRow, SavedMove } from "./store.ts";
 import { playerUrl } from "./registration.ts";
 import { aiConfigured, aiLabel } from "../integrations/ai.ts";
@@ -17,7 +17,10 @@ import { subscriberCount, vapidPublicKey } from "./notifications.ts";
 export function incomingFor(s: GameState, i: number) {
   const r = s.history.at(-1), me = s.players[i].nation;
   if (!r) return null;
-  const cards = r.cards.filter(c => c.target === me).map(c => ({ nation: c.nation, card: c.card, stolen: c.stolen ?? null }));
+  const cards = r.cards.filter(c => c.target === me).map(c => ({
+    nation: c.nation, card: c.card, stolen: c.stolen ?? null,
+    vpLost: CARD_POOL.find(([k]) => k.id === c.card)?.[0].sanction ?? null,
+  }));
   const accused = r.accusation?.target === me ? { correct: r.accusation.correct } : null;
   return cards.length || accused ? { day: r.day, cards, accused } : null;
 }
@@ -48,6 +51,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
     accusationUsed: s.accusationUsed,
     players: s.players.map((q, j) => ({
       idx: j, nation: q.nation, playerName: players[j].name, pk: q.pk, locked: !!moves[j]?.locked,
+      allGoalsKnown: j !== i && knowsAllGoals(s, i, j), // für den Leak: Ziel nicht mehr wählbar
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),
     papers,

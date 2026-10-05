@@ -48,7 +48,7 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     const idx = p.hand.findIndex(c => c.id === m.cardId); if (idx < 0) return null;
     const c = p.hand[idx]; const cost = cardCost(p, c); if (p.pk < cost) return null;
     const target = m.target !== undefined && m.target !== i && m.target >= 0 && m.target < 4 ? s.players[m.target] : undefined;
-    const interactive = !!(c.steal || c.leak);
+    const interactive = c.kind === "interaktion";
     if (interactive && !target) return null;
     p.hand.splice(idx, 1); p.pk -= cost;
     return { p, c, target, interactive };
@@ -66,6 +66,8 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     if (c.kind === "sauber") p.stats.cleanPlayed++;
     let stolen: number | undefined;
     if (c.steal && target) { stolen = Math.min(target.pk, c.steal); target.pk -= stolen; p.pk += stolen; }
+    // Ohne Untergrenze: Wie viele Siegpunkte das Ziel hat, ist geheim und soll es bleiben
+    if (c.sanction && target) target.vp -= c.sanction;
     if (c.leak && target) {
       const goal = target.goals.find(g => !p.intel.some(x => x.nation === target.nation && x.goal === g));
       if (goal) p.intel.push({ nation: target.nation, goal });

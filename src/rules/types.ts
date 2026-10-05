@@ -33,6 +33,7 @@ export interface Card {
   tracks?: Partial<Record<Track, number>>;
   steal?: number; // Einfluss von einem Ziel nehmen
   leak?: boolean; // ein geheimes Ziel eines Spielers aufdecken
+  sanction?: number; // das Ziel verliert so viele Siegpunkte
 }
 
 export interface Offer {
