@@ -10,7 +10,7 @@ Keine Laufzeit-Pakete: Node 22.18+, eingebautes SQLite, schlichtes HTML/CSS/JS.
 2. `npm start` – oder in VS Code: „Ausführen und Debuggen“ → „Spiel starten“ (F5).
 3. http://localhost:8080 öffnen, „Spielleitung“ wählen, Admin-Passwort eingeben, in der Verwaltung ein Spiel anlegen.
 
-- `npm test` – alle Tests: Regeln und Engine (`selftest`), Web-Push gegen RFC 8291 (`pushtest`), Spielbetrieb mit Datenbank (`gametest`), alte Datenbanken (`migrationtest`), KI-Anbindung gegen einen nachgebauten Anbieter (`aitest`)
+- `npm test` – alle Tests: Regeln und Engine (`selftest`), Web-Push gegen RFC 8291 (`pushtest`), Spielbetrieb mit Datenbank (`gametest`), alte Datenbanken (`migrationtest`), KI-Anbindung gegen einen nachgebauten Anbieter (`aitest`), Zugriffsregeln über echte HTTP-Anfragen (`httptest`)
 - `npm run simulate` – Balance-Simulator mit Bots
 - `npm run check` – TypeScript-Typprüfung (braucht `npm install`)
 
@@ -75,7 +75,7 @@ Die Befehle hier laufen im Verzeichnis der Installation, auf dem CI-Server also 
 2. Dort unter „Neues Spiel anlegen“ die vier Namen eingeben. Läuft noch ein Spiel, wird es dabei abgebrochen – es läuft immer nur eins.
 3. „Öffnen“ führt zur Seite des Spiels. Dort für jeden Spieler „Neues Passwort“ drücken und es ihm schicken. Es wird nur einmal angezeigt.
    „Passwort erneuern“ sperrt jemanden aus: neues Passwort **und** neuer Link, angemeldete Geräte müssen sich neu anmelden, seine Benachrichtigungen werden abgeschaltet.
-4. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Die geheimen Links (`/p/…`, `/a/…`) funktionieren weiterhin.
+4. Die Spieler öffnen `BASE_URL`, wählen ihre Nation und geben ihr Passwort ein. Das Gerät merkt sich die Anmeldung. Die geheimen Spieler-Links (`/p/…`) funktionieren weiterhin. Die Seite eines Spiels für die Spielleitung (`/a/…`) braucht zusätzlich die Anmeldung als Spielleitung; ein weitergegebener Link allein reicht nicht.
 5. Jeden Abend um 21:00 wird der Tag aufgelöst. Haben alle festgelegt, kannst du auf der Seite des Spiels früher auflösen. „Fehlende Züge spielt ein Bot“ ist praktisch zum Alleine-Testen.
 6. In der Verwaltung hat jedes Spiel:
    - **Spiel abbrechen** (nur laufende): sofort Schluss, keine Auflösung, keine Erinnerungen, keine Züge mehr; die Zeitung bleibt lesbar.
@@ -127,11 +127,11 @@ Jede Datei hat eine Aufgabe. Abhängigkeiten zeigen nur nach unten: `http → ga
 | `src/game/` | Spielbetrieb: `store.ts` (SQLite, einziges SQL), `registration.ts` (Spiele anlegen, Links, Admin-Passwort), `login.ts` (Startseite: Anmeldung, Passwort erneuern), `adminSession.ts` (Anmeldung der Spielleitung), `history.ts` (Verlauf exportieren), `passwords.ts` (Passwörter erzeugen und prüfen), `service.ts` (Züge, Auflösung, Einstellungen), `view.ts` (wer was sehen darf), `notifications.ts` (wer wann benachrichtigt wird), `scheduler.ts`, `time.ts`. |
 | `src/newspaper/` | Zeitung: `summary.ts` (ohne KI), `prompt.ts` (Auftrag an die KI), `paper.ts` (entscheidet, welche Variante). |
 | `src/integrations/` | Außenwelt: `ai.ts` (KI über OpenAI-kompatible Schnittstelle), `aiProviders.ts` (Voreinstellungen je Anbieter), `push/` (Web-Push: `crypto.ts` Verschlüsselung und Signatur nach RFC 8291/8292, `send.ts` Versand). |
-| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`. |
+| `src/http/` | `server.ts` (Routing, Fehler), `routes/` (`login.ts` Startseite, `player.ts` Spielerseite, `admin.ts` Seite eines Spiels, `adminArea.ts` Verwaltung), `respond.ts`, `static.ts`, `rateLimit.ts`, `cookies.ts`, `adminAuth.ts` (Zugang der Spielleitung). |
 | `src/main.ts` | Startpunkt. |
 | `.github/` | `workflows/ci.yml` (Tests, Staging bei PRs, Prod bei master), `workflows/ops.yml` (Handgriffe per Knopf), `actions/ssh-deploy/` (Befehl an den Server). |
 | `deploy/` | `deploy.sh` (läuft auf dem Server). |
-| `src/tools/` | `simulate.ts` (Balance), Tests: `selftest.ts`, `pushtest.ts`, `gametest.ts`, `migrationtest.ts`, `aitest.ts`. |
+| `src/tools/` | `simulate.ts` (Balance), Tests: `selftest.ts`, `pushtest.ts`, `gametest.ts`, `migrationtest.ts`, `aitest.ts`, `httptest.ts`. |
 | `public/` | Oberfläche: `index.html`, `css/app.css`, `js/player.js` mit `js/player/` (Schritte, Reiter, Einführung), `js/admin.js` mit `js/admin/frontpage.js` (Zeitung als Bild) und `js/admin/overview.js` (Verwaltung aller Spiele), `js/start.js`, gemeinsame Helfer; `sw.js` (Service Worker für Benachrichtigungen), `manifest.webmanifest`, `icons/`. Texte kommen über `/strings.js` aus `src/i18n`. |
 
 Typische Änderungen:

@@ -9,6 +9,6 @@ export const fmt = (template, vars = {}) => template.replace(/\{(\w+)\}/g, (_, k
 export async function api(path, body) {
   const res = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || res.statusText);
+  if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
   return data;
 }

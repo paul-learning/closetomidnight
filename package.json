@@ -9,7 +9,7 @@
     "start": "node --no-warnings --env-file-if-exists=.env src/main.ts",
     "simulate": "node --no-warnings src/tools/simulate.ts 3000",
     "check": "tsc --noEmit",
-    "test": "node --no-warnings --test src/tools/selftest.ts src/tools/pushtest.ts src/tools/gametest.ts src/tools/migrationtest.ts src/tools/aitest.ts"
+    "test": "node --no-warnings --test src/tools/selftest.ts src/tools/pushtest.ts src/tools/gametest.ts src/tools/migrationtest.ts src/tools/aitest.ts src/tools/httptest.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.0",

@@ -71,21 +71,27 @@ function describeTest(t) {
   return `<span class="err-text">${msg}</span>`;
 }
 
+// Ohne (oder mit abgelaufener) Anmeldung: zur Startseite, nach der Anmeldung als Spielleitung zurück hierher
+function toLogin() { location.href = `/?next=${encodeURIComponent(`/a/${key}`)}`; }
+
 async function runTest(kind, button) {
   button.disabled = true; button.textContent = C.testing;
   try { const r = await api(`/api/a/${key}/test-${kind}`, {}); testResult[kind] = describeTest(r.test); }
-  catch (e) { testResult[kind] = `<span class="err-text">${esc(e.message)}</span>`; }
+  catch (e) { if (e.status === 401) return toLogin(); testResult[kind] = `<span class="err-text">${esc(e.message)}</span>`; }
   render();
 }
 
 async function act(action, body) {
   error = "";
-  try { data = await api(`/api/a/${key}/${action}`, body); } catch (e) { error = e.message; }
+  try { data = await api(`/api/a/${key}/${action}`, body); } catch (e) { if (e.status === 401) return toLogin(); error = e.message; }
   render();
 }
 
 export async function startAdmin(k) {
   key = k;
-  data = await api(`/api/a/${key}`);
+  const res = await fetch(`/api/a/${encodeURIComponent(key)}`);
+  if (res.status === 401) return toLogin();
+  data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
   render();
 }
