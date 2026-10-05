@@ -5,7 +5,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 
 // Nachgebauter OpenAI-kompatibler Anbieter. `mode` steuert die nächsten Antworten.
-let mode: "ok" | "429" | "empty" | "html" | "flaky" | "noExtra" = "ok";
+let mode: "ok" | "429" | "empty" | "html" | "flaky" | "noExtra" | "markdown" = "ok";
 const seen: any[] = [];
 const server = createServer((req, res) => {
   let body = ""; req.on("data", c => body += c);
@@ -16,6 +16,7 @@ const server = createServer((req, res) => {
     if (mode === "empty") return reply(200, { choices: [{ message: { content: "" }, finish_reason: "length" }] });
     if (mode === "html") { res.writeHead(200, { "Content-Type": "text/html" }); return res.end("<html>Wartung</html>"); }
     if (mode === "flaky") { mode = "ok"; return reply(503, { error: { message: "The model is overloaded" } }); }
+    if (mode === "markdown") return reply(200, { choices: [{ message: { content: "**PANIK!**\n\n* Teutonien *zögert*" } }] });
     if (mode === "noExtra" && "reasoning_effort" in b) return reply(400, { error: { message: "Unknown field reasoning_effort" } });
     reply(200, { choices: [{ message: { content: "  WELT AM ABGRUND  " } }] });
   });
@@ -106,6 +107,18 @@ test("fällt die KI aus, erscheint der Tag trotzdem – mit der schlichten Zusam
   const g = store.gameByAdminKey(adminKey)!;
   await resolveGame(g.id);
   assert.equal(store.papers(g.id)[0].text, "🗞 WELT AM ABGRUND", "mit KI: Text der KI");
+});
+
+test("Markdown aus der KI landet als reiner Text in der Zeitung und im Verbindungstest", async () => {
+  const { store } = await import("../game/store.ts");
+  const { createGame } = await import("../game/registration.ts");
+  const { resolveGame } = await import("../game/service.ts");
+  mode = "markdown";
+  const { adminKey } = createGame({ names: [], bots: false });
+  const g = store.gameByAdminKey(adminKey)!;
+  await resolveGame(g.id);
+  assert.equal(store.papers(g.id)[0].text, "🗞 PANIK!\n\n• Teutonien zögert");
+  assert.deepEqual(await testAi(), { ok: true, sample: "PANIK!\n\n• Teutonien zögert" });
 });
 
 test("Einstellungen: Voreinstellungen", () => {

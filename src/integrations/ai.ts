@@ -2,6 +2,7 @@
 // ein kurzer Chat-Aufruf und ein Verbindungstest. Einstellungen: CONFIG.ai (siehe config.ts).
 import { CONFIG } from "../config.ts";
 import { T } from "../i18n/index.ts";
+import { toPlainText } from "../newspaper/plainText.ts";
 
 type AiSettings = Pick<typeof CONFIG.ai, "baseUrl" | "apiKey" | "model" | "provider" | "extraBody" | "minTokens" | "retryDelayMs">;
 
@@ -69,6 +70,6 @@ function errorText(body: any): string | undefined {
 /** Prüft Schlüssel und Modell mit einer kleinen Anfrage, ohne zweiten Versuch (schnelle Rückmeldung). */
 export async function testAi(): Promise<{ ok: true; sample: string } | { ok: false; reason: "notSet" | "failed"; detail?: string }> {
   if (CONFIG.ai.problem) return { ok: false, reason: "notSet", detail: CONFIG.ai.problem };
-  try { return { ok: true, sample: (await askAi(T.prompt.test, 1000, { retry: false })).slice(0, 200) }; }
+  try { return { ok: true, sample: toPlainText(await askAi(T.prompt.test, 1000, { retry: false })).slice(0, 200) }; }
   catch (e: any) { return { ok: false, reason: "failed", detail: String(e?.message ?? e) }; }
 }
