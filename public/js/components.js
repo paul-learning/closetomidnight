@@ -32,7 +32,7 @@ export function clockPanel(d) {
     ${d.over ? "" : trackWarnings(d.tracks, d.rules.trackMax)}</div></section>`;
 }
 
-/** Ein voller Balken ist sofort Mitternacht – deshalb eigens warnen, wenn einer kurz davor steht. */
+/** Ein voller Balken am Tagesende ist Mitternacht – deshalb eigens warnen, wenn einer kurz davor steht. */
 function trackWarnings(tracks, max) {
   const lines = Object.keys(T.tracks).filter(t => max - tracks[t] <= DANGER && tracks[t] < max)
     .map(t => { const n = max - tracks[t]; return fmt(n === 1 ? T.client.trackDangerOne : T.client.trackDanger, { track: T.tracks[t], n }); });
