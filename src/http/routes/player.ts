@@ -1,7 +1,7 @@
 // /api/p/:token – Spieleransicht lesen, Zug speichern, Benachrichtigungen abonnieren.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { T } from "../../i18n/index.ts";
-import { GameCancelled, saveMove } from "../../game/service.ts";
+import { GameCancelled, saveMove, sendTransfer } from "../../game/service.ts";
 import { store } from "../../game/store.ts";
 import { playerView } from "../../game/view.ts";
 import { subscribe } from "../../game/notifications.ts";
@@ -22,6 +22,10 @@ export async function playerRoute(req: IncomingMessage, res: ServerResponse, tok
   if (req.method === "POST" && action === "move") {
     const body = await readBody(req);
     saveMove(store.game(pl.gameId)!, pl.idx, body.move, !!body.lock);
+  }
+  if (req.method === "POST" && action === "transfer") {
+    const body = await readBody(req);
+    sendTransfer(store.game(pl.gameId)!, pl.idx, body);
   }
   const game = store.game(pl.gameId)!;
   json(res, { ...playerView(game.state, pl.idx, store.players(game.id), store.moves(game.id, game.state.day), store.papers(game.id)), cancelled: game.cancelled });

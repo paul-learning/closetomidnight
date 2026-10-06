@@ -21,6 +21,7 @@ export function prompt(s: GameState, r: DayReport): string {
     fmt(Q.decision, { decision: decision(r) }),
     fmt(Q.cards, { list: cardList(r) }),
     fmt(Q.offers, { list: r.offersTaken.length ? fmt(Q.offersUnknownBuyer, { list: r.offersTaken.map(power).join(", ") }) : Q.none }),
+    fmt(Q.transfers, { text: r.transferred ? fmt(Q.transferredSum, { n: r.transferred }) : Q.none }),
     fmt(Q.accusation, { text: r.accusation ? fmt(r.accusation.correct ? Q.accusedRight : Q.accusedWrong, { nation: nation(r.accusation.target) }) : Q.none }),
     fmt(Q.clock, { before: clockTime(r.tracksBefore), after: time(s, r), ...r.tracksAfter }),
     s.over ? fmt(Q.final, { ending: T.endings[s.ending!], winners: nations(s.winners), hero: nations(s.awards?.hero), arsonist: nations(s.awards?.arsonist) })

@@ -141,7 +141,7 @@ test("Kasten „gegen dich“: Anklage zeigt nur richtig/falsch, nie die Ankläg
   const none = { vote: null, cardId: null };
   const s = newGame(5);
   const next = resolveDay(s, [none, { ...none, accuse: 0 }, { ...none, accuse: 0 }, none]); // Spieler 0 ist kein Überläufer
-  assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false } });
+  assert.deepEqual(incomingFor(next, 0), { day: 1, cards: [], accused: { correct: false }, councilDebt: null });
   for (const i of [1, 2, 3]) assert.equal(incomingFor(next, i), null, "Ankläger und Unbeteiligte sehen keinen Kasten");
 });
 
@@ -243,3 +243,72 @@ test("Doppelagent deckt beide Ziele auf, Grundeinkommen gibt allen Einfluss", ()
   assert.equal(next.players[0].pk, 0 + 3 + 3);
 });
 
+
+test("Überweisung: sofort, nur freier Einfluss, Betreff bereinigt, Tagessumme öffentlich", async () => {
+  const { transfer, freePk } = await import("../engine/index.ts");
+  const s = newGame(41);
+  s.players[0].pk = 10;
+  const card = { id: "gipfel", kind: "sauber" as const, cost: 3, vp: 2, tracks: { krieg: -2 } };
+  s.players[0].hand = [card];
+  const vote = s.crisis.responses.find(r => r.costEach > 0)!;
+  const move = { vote: vote.id, cardId: "gipfel" };
+  assert.equal(freePk(s, 0, move), 10 - 3 - vote.costEach);
+  assert.throws(() => transfer(s, 0, { to: 1, amount: freePk(s, 0, move) + 1 }, move), (e: any) => e.code === "notEnoughFree");
+  for (const bad of [{ to: 0, amount: 1 }, { to: 4, amount: 1 }, { to: 1, amount: 0 }, { to: 1, amount: 1.5 }, { to: "1", amount: 1 }])
+    assert.throws(() => transfer(s, 0, bad, move), (e: any) => e.code === "badTransfer", JSON.stringify(bad));
+  const after = transfer(s, 0, { to: 2, amount: 2, subject: "  für\\n deine\u0007 Stimme  " + "x".repeat(80) }, move);
+  assert.equal(after.players[0].pk, 8);
+  assert.equal(after.players[2].pk, s.players[2].pk + 2);
+  assert.equal(s.players[0].pk, 10, "alter Zustand unverändert");
+  const t = after.transfers![0];
+  assert.equal(t.day, 1); assert.equal(t.subject.length, 60); assert.ok(!/[\u0000-\u001f]/.test(t.subject));
+  // Ohne gespeicherten Zug ist alles frei
+  assert.equal(freePk(s, 0, null), 10);
+  const two = transfer(after, 1, { to: 0, amount: 1 }, null);
+  const none = { vote: null, cardId: null };
+  const next = resolveDay(two, [none, none, none, none]);
+  assert.equal(next.history.at(-1)!.transferred, 3);
+  assert.equal(resolveDay(next, [none, none, none, none]).history.at(-1)!.transferred ?? 0, 0, "am nächsten Tag zählt nur der neue Tag");
+  // Logbuch in der Spieleransicht: nur eigene Überweisungen
+  const { playerView } = await import("../game/view.ts");
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any, view = (i: number) => playerView(two, i, rows, [null, null, null, null], []);
+  assert.deepEqual(view(0).transfers.map(x => [x.out, x.nation, x.amount]), [[false, two.players[1].nation, 1], [true, two.players[2].nation, 2]]);
+  assert.deepEqual(view(3).transfers, []);
+});
+
+test("Überweisung bleibt geheim: andere sehen den Einfluss vom Tagesbeginn; Spam-Grenze; Betreff ohne Richtungszeichen", async () => {
+  const { transfer, cleanSubject, TRANSFERS_PER_DAY } = await import("../engine/index.ts");
+  const { playerView } = await import("../game/view.ts");
+  const s = newGame(42);
+  const t = transfer(s, 0, { to: 1, amount: 2 }, null);
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any, view = (i: number) => playerView(t, i, rows, [null, null, null, null], []);
+  assert.deepEqual(view(2).players.map(p => p.pk), s.players.map(p => p.pk), "Dritte sehen nichts");
+  assert.equal(view(0).players[0].pk, s.players[0].pk - 2, "eigener Einfluss echt");
+  assert.equal(view(0).players[1].pk, s.players[1].pk, "auch Absender sieht den Empfänger ohne Überweisung");
+  assert.equal(view(1).me.pk, s.players[1].pk + 2);
+  let u = structuredClone(s); u.players[0].pk = 100;
+  for (let k = 0; k < TRANSFERS_PER_DAY; k++) u = transfer(u, 0, { to: 1, amount: 1 }, null);
+  assert.throws(() => transfer(u, 0, { to: 2, amount: 1 }, null), (e: any) => e.code === "tooManyTransfers");
+  assert.doesNotThrow(() => transfer(u, 1, { to: 0, amount: 1 }, null), "Grenze gilt je Absender");
+  assert.equal(cleanSubject("a‮b​c⁦d"), "a b c d");
+});
+
+test("Ratskosten nicht bezahlbar: Siegpunkte weg, nur der Betroffene erfährt es; Rest nach der Karte für die Warnung", async () => {
+  const { pkAfterCard } = await import("../engine/index.ts");
+  const { incomingFor, playerView } = await import("../game/view.ts");
+  const s = newGame(43);
+  const opt = s.crisis.responses.filter(r => !r.unanimous && r.costEach > 0)[0] ?? s.crisis.responses.find(r => r.costEach > 0)!;
+  s.players[0].pk = 0; s.players[0].vp = 5;
+  s.players[0].hand = [{ id: "notstand", kind: "schmutzig", cost: 0, vp: 2, pk: 2, tracks: { autokratie: 1 } }];
+  assert.equal(pkAfterCard(s, 0, { vote: null, cardId: "notstand" }), 0, "Einfluss-Gewinn der Karte zählt nicht (Blockade möglich)");
+  const votes = s.players.map(() => ({ vote: opt.id, cardId: null }));
+  const next = resolveDay(s, votes);
+  assert.equal(next.history.at(-1)!.passed, opt.id);
+  assert.deepEqual(next.players[0].councilDebt, { day: 1, vp: opt.costEach });
+  assert.equal(next.players[0].vp, 5 - opt.costEach);
+  assert.equal(incomingFor(next, 0)!.councilDebt, opt.costEach);
+  assert.equal(incomingFor(next, 1)?.councilDebt ?? null, null);
+  assert.ok(!JSON.stringify(next.history.at(-1)).includes("Debt"), "nicht im öffentlichen Bericht");
+  const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any;
+  assert.ok(!("councilDebt" in playerView(next, 1, rows, [null, null, null, null], []).players[0]));
+});

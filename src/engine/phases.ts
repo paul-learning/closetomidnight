@@ -7,7 +7,8 @@ import { canDefect, canVeto, cardCost, topTrack } from "./state.ts";
 import type { DayReport, GameState, Move, Player } from "./state.ts";
 
 export const bump = (s: GameState, t: Track, d: number) => { s.tracks[t] = Math.max(0, Math.min(BALANCE.trackMax, s.tracks[t] + d)); };
-const pay = (p: Player, amount: number) => { const paid = Math.min(p.pk, amount); p.pk -= paid; p.vp -= amount - paid; };
+/** Zahlt in Einfluss; was fehlt, kostet Siegpunkte. Gibt die verlorenen Siegpunkte zurück. */
+const pay = (p: Player, amount: number) => { const paid = Math.min(p.pk, amount); p.pk -= paid; p.vp -= amount - paid; return amount - paid; };
 
 /** 0. Überlaufen (geheim) */
 export function defections(s: GameState, moves: Move[]) {
@@ -87,7 +88,10 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
 /** 2b. Kosten des Ratsbeschlusses: erst nach den Karten, damit eine festgelegte Karte nie am Beschluss scheitert. */
 export function councilCosts(s: GameState, rep: DayReport) {
   const passed = s.crisis.responses.find(r => r.id === rep.passed);
-  if (passed) s.players.forEach(p => pay(p, passed.costEach));
+  if (passed) s.players.forEach(p => {
+    const lost = pay(p, passed.costEach);
+    if (lost > 0) p.councilDebt = { day: rep.day, vp: lost }; // nur der Spieler selbst erfährt davon
+  });
 }
 
 /** 3. Angebote der Großmächte: öffentlich wird nur, wer gekauft hat, nicht wen. */

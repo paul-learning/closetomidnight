@@ -9,7 +9,7 @@ process.env.MISTRAL_API_KEY = "";
 process.env.AI_PROVIDER = "";
 const { store } = await import("../game/store.ts");
 const { createGame } = await import("../game/registration.ts");
-const { cancelGame, resolveGame, saveMove, GameCancelled } = await import("../game/service.ts");
+const { cancelGame, resolveGame, saveMove, sendTransfer, GameCancelled, Resolving } = await import("../game/service.ts");
 const { lobby, login } = await import("../game/login.ts");
 const { gameHistory } = await import("../game/history.ts");
 const { deleteGame, CannotDelete } = await import("../game/service.ts");
@@ -121,4 +121,29 @@ test("Anmeldung der Spielleitung: neues Admin-Passwort macht alte Anmeldungen un
   const h = (x: string) => createHash("sha256").update(x).digest("base64url");
   assert.ok(store.adminSessionValid(h(t), h("fvz-admin-secret:" + old)));
   assert.ok(!store.adminSessionValid(h(t), h("fvz-admin-secret:anderes")));
+});
+
+test("Überweisung im Spielbetrieb: gespeicherter Zug reserviert, Zeitung meldet die Summe, Verlauf nennt alles", async () => {
+  const g = newGame();
+  const s = g.state;
+  const card = s.players[0].hand.find(c => c.kind !== "interaktion" && c.cost <= s.players[0].pk && !c.tracks?.krieg); // ohne Ziel, ohne Rabatt
+  saveMove(g, 0, { vote: null, cardId: card?.id ?? null }, false);
+  const free = s.players[0].pk - (card?.cost ?? 0);
+  assert.throws(() => sendTransfer(store.game(g.id)!, 0, { to: 1, amount: free + 1 }), (e: any) => e.code === "notEnoughFree");
+  sendTransfer(store.game(g.id)!, 0, { to: 1, amount: 1, subject: "Anzahlung" });
+  assert.equal(store.game(g.id)!.state.players[1].pk, s.players[1].pk + 1);
+  assert.equal(store.game(g.id)!.lastResolved, g.lastResolved, "Auflösungstag unverändert");
+  await resolveGame(g.id);
+  assert.match(store.papers(g.id)[0].text, /Unter der Hand flossen 1 Einfluss/);
+  assert.match(gameHistory(store.game(g.id)!), /→ .*: 1 Einfluss, Betreff „Anzahlung“/);
+  cancelGame(g.id);
+  assert.throws(() => sendTransfer(store.game(g.id)!, 0, { to: 1, amount: 1 }), GameCancelled);
+});
+
+test("Überweisung während der Auflösung wird abgelehnt (sonst ginge sie verloren)", async () => {
+  const g = newGame();
+  const running = resolveGame(g.id); // läuft bis zur Zeitung, dann wartet es
+  assert.throws(() => sendTransfer(store.game(g.id)!, 0, { to: 1, amount: 1 }), Resolving);
+  await running;
+  sendTransfer(store.game(g.id)!, 0, { to: 1, amount: 1 });
 });

@@ -1,7 +1,7 @@
 // Was Spieler und Spielleitung sehen dürfen. Nur IDs und Zahlen; die Oberfläche setzt die Texte ein.
 // Geheimnisse anderer (Ziele, Siegpunkte, Angebote, Überläufer) bleiben verborgen, bis das Spiel endet.
 import { CONFIG } from "../config.ts";
-import { canDefect, canVeto, cardCost, clockTime, hasForesight, knowsAllGoals, minutesLeft, offerFor } from "../engine/index.ts";
+import { canDefect, canVeto, cardCost, clockTime, freePk, hasForesight, knowsAllGoals, minutesLeft, offerFor, reservedPk, pkAfterCard, SUBJECT_MAX, transferredToday } from "../engine/index.ts";
 import type { GameState } from "../engine/index.ts";
 import { BALANCE } from "../rules/balance.ts";
 import { GOALS, cardById, cardTier } from "../rules/content.ts";
@@ -28,7 +28,8 @@ export function incomingFor(s: GameState, i: number) {
     };
   });
   const accused = r.accusation?.target === me ? { correct: r.accusation.correct } : null;
-  return cards.length || accused ? { day: r.day, cards, accused } : null;
+  const debt = s.players[i].councilDebt?.day === r.day ? s.players[i].councilDebt!.vp : null;
+  return cards.length || accused || debt ? { day: r.day, cards, accused, councilDebt: debt } : null;
 }
 
 const goalInfo = (ids: string[]) => ids.map(id => { const g = GOALS.find(x => x.id === id)!; return { id, kind: g.kind, vp: g.vp }; });
@@ -52,18 +53,28 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
       intelNew: p.intel.filter(x => x.day !== undefined && x.day === s.history.at(-1)?.day).map(x => ({ ...goalInfo([x.goal])[0], nation: x.nation, day: x.day })),
       vetoAvailable: canVeto(p),
       canDefect: canDefect(s, i),
+      // Überweisungen: was frei ist und was der gespeicherte Zug reserviert
+      reservedPk: reservedPk(s, i, moves[i]?.move), freePk: s.over ? 0 : freePk(s, i, moves[i]?.move),
+      // für die Warnung beim Überweisen: was nach der gespeicherten Karte voraussichtlich übrig ist
+      pkAfterCard: pkAfterCard(s, i, moves[i]?.move),
     },
     crisis: s.crisis,
     nextCrisis: hasForesight(p) ? s.nextCrisis : null,
     offer: s.over ? null : offerFor(s, i),
     accusationUsed: s.accusationUsed,
     players: s.players.map((q, j) => ({
-      idx: j, nation: q.nation, playerName: players[j].name, pk: q.pk, locked: !!moves[j]?.locked,
+      // Einfluss der anderen ohne heutige Überweisungen: sonst sähe man live, wer wem gezahlt hat
+      idx: j, nation: q.nation, playerName: players[j].name, pk: j === i || s.over ? q.pk : q.pk - transferredToday(s, j), locked: !!moves[j]?.locked,
       allGoalsKnown: j !== i && knowsAllGoals(s, i, j), // für den Leak: Ziel nicht mehr wählbar
       ...(s.over ? { vp: q.vp, defector: q.defector, goals: goalInfo(q.goals) } : {}),
     })),
     papers,
     incoming: incomingFor(s, i),
+    // Logbuch: nur Überweisungen, an denen dieser Spieler beteiligt ist. Neueste zuerst.
+    transfers: (s.transfers ?? []).filter(t => t.from === i || t.to === i).reverse().map(t => ({
+      day: t.day, out: t.from === i, nation: s.players[t.from === i ? t.to : t.from].nation, amount: t.amount, subject: t.subject,
+    })),
+    subjectMax: SUBJECT_MAX,
     myMove: moves[i] ?? null,
     pushKey: vapidPublicKey(),
   };

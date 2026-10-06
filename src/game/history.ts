@@ -34,16 +34,23 @@ export function gameHistory(g: GameRow): string {
     return lines;
   };
 
+  // Überweisungen eines Tages, mit Betreff (die Spielleitung sieht alle geheimen Züge)
+  const transferLines = (day: number) => {
+    const ts = (s.transfers ?? []).filter(t => t.day === day);
+    return ts.length ? ["", H.transfers, ...ts.map(t => fmt(t.subject ? H.transferSubject : H.transfer,
+      { from: nationOf(t.from), to: nationOf(t.to), amount: t.amount, subject: t.subject }))] : [];
+  };
+
   for (const r of s.history) {
     out.push("", fmt(H.day, { day: r.day, crisis: T.crises[r.crisis].name }));
     out.push(r.passed ? fmt(H.passed, { response: T.crises[r.crisis].responses[r.passed] }) : r.vetoedBy ? fmt(H.vetoed, { nation: nation(r.vetoedBy) }) : H.noDeal);
-    out.push(fmt(H.clock, { time: clockTime(r.tracksAfter), ...r.tracksAfter }), "", ...moveLines(r.day, r.crisis, r.cards));
+    out.push(fmt(H.clock, { time: clockTime(r.tracksAfter), ...r.tracksAfter }), "", ...moveLines(r.day, r.crisis, r.cards), ...transferLines(r.day));
     if (r.accusation) out.push("", fmt(r.accusation.correct ? H.exposed : H.falseSuspicion, { nation: nation(r.accusation.target) }));
     const paper = papers.find(p => p.day === r.day);
     if (paper) out.push("", H.paper, "", ...paper.text.split("\n").map(l => `> ${l}`));
   }
   // Laufender (oder beim Abbruch offener) Tag: gespeicherte Züge, noch ohne Ergebnis
-  if (!s.over && moves.some(m => m.day === s.day)) out.push("", fmt(H.dayOpen, { day: s.day, crisis: T.crises[s.crisis.id].name }), ...moveLines(s.day, s.crisis.id));
+  if (!s.over && (moves.some(m => m.day === s.day) || (s.transfers ?? []).some(t => t.day === s.day))) out.push("", fmt(H.dayOpen, { day: s.day, crisis: T.crises[s.crisis.id].name }), ...moveLines(s.day, s.crisis.id), ...transferLines(s.day));
 
   if (s.over) {
     out.push("", H.result, fmt(H.ending, { ending: T.endings[s.ending!] }), fmt(H.winners, { names: list(s.winners) }));

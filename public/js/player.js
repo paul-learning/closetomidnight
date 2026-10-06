@@ -1,12 +1,13 @@
 // Spielerseite: Zustand, Darstellung und Speichern. Inhalte der Schritte und Reiter stehen in player/.
 import { $, $$, T, esc, fmt, api } from "./util.js";
+import { nation } from "./names.js";
 import { STEPS, startStep, stepsFor } from "./player/steps.js";
-import { allianceTab, header, incomingBox, intelBox, paperTab, resultTab } from "./player/tabs.js";
+import { allianceTab, header, incomingBox, intelBox, paperTab, resultTab, transferWarning } from "./player/tabs.js";
 import { renderIntro, seenIntro } from "./player/intro.js";
 import { dismissPush, enablePush, pushCard, pushState, syncPush } from "./player/push.js";
 
 const C = T.client;
-const ui = { data: null, draft: null, error: "", tab: "zug", step: 0, fromHub: false, intro: -1, key: "", push: "hidden" };
+const ui = { data: null, draft: null, error: "", notice: "", tab: "zug", step: 0, fromHub: false, intro: -1, key: "", push: "hidden", transfer: {} };
 
 function moveTab(d, locked) {
   if (locked) return `<h2>${C.lockedTitle}</h2><p class="hint">${fmt(C.lockedHint, { hour: d.rules.resolveHour })}</p>${STEPS.uebersicht(d, ui.draft, "disabled")}`;
@@ -39,10 +40,10 @@ function render() {
   if (ui.intro >= 0) return renderIntro(ui.intro, d.rules, p => { ui.intro = p; render(); }, () => { ui.intro = -1; render(); });
   const locked = d.myMove?.locked && !ui.draft._editing;
   ui.step = Math.min(ui.step, stepsFor(d).length - 1);
-  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d)
+  const body = ui.tab === "zeitung" || (d.cancelled && ui.tab === "zug") ? paperTab(d) : ui.tab === "allianz" ? allianceTab(d, ui.transfer)
     : incomingBox(d) + intelBox(d) + (d.over ? resultTab(d) : moveTab(d, locked));
   const notice = d.cancelled ? `<div class="err" role="status">${C.cancelledPlayer} <a class="link" href="/">${C.toStart}</a></div>` : "";
-  $("#app").innerHTML = header(d, ui.tab) + notice + (d.cancelled ? "" : pushCard(ui.push)) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + body;
+  $("#app").innerHTML = header(d, ui.tab) + notice + (d.cancelled ? "" : pushCard(ui.push)) + (ui.error ? `<div class="err" role="alert">${esc(ui.error)}</div>` : "") + (ui.notice ? `<div class="notice" role="status">${esc(ui.notice)}</div>` : "") + body;
   bar(d, locked);
   bind(d, locked);
 }
@@ -64,8 +65,14 @@ function bind(d, locked) {
   });
   $("#push-dismiss")?.addEventListener("click", () => { dismissPush(); ui.push = "hidden"; render(); });
   $$("[data-step]").forEach(b => b.addEventListener("click", () => go(Number(b.dataset.step))));
-  $$("[data-tab]").forEach(b => b.addEventListener("click", () => { ui.tab = b.dataset.tab; render(); }));
-  $$("#app input, #app select").forEach(el => el.addEventListener("change", () => {
+  $$("[data-tab]").forEach(b => b.addEventListener("click", () => { ui.tab = b.dataset.tab; ui.notice = ""; render(); }));
+  // Überweisung: Eingaben merken (überleben ein Neuzeichnen), absenden
+  $$("#transfer [data-local]").forEach(el => el.addEventListener("input", () => {
+    ui.transfer[el.name] = el.name === "to" ? Number(el.value) : el.value;
+    if (el.name === "amount") $("#transfer-warn").innerHTML = transferWarning(d, el.value); // live, ohne neu zu zeichnen
+  }));
+  $("#transfer")?.addEventListener("submit", e => { e.preventDefault(); sendTransfer(); });
+  $$("#app input:not([data-local]), #app select:not([data-local])").forEach(el => el.addEventListener("change", () => {
     const n = el.name, v = el.type === "checkbox" ? el.checked : el.value;
     if (n === "vote") ui.draft.vote = v || null;
     else if (n === "card") { ui.draft.cardId = v || null; delete ui.draft.target; }
@@ -75,6 +82,24 @@ function bind(d, locked) {
   }));
 }
 
+
+async function sendTransfer() {
+  const f = $("#transfer"), others = ui.data.players.filter(p => p.idx !== ui.data.me.idx);
+  const to = Number(f.elements.to.value), amount = Number(f.elements.amount.value), subject = f.elements.subject.value;
+  const day = ui.data.day;
+  ui.error = ""; ui.notice = "";
+  try {
+    ui.data = await api(`/api/p/${ui.key}/transfer`, { to, amount, subject });
+    ui.transfer = { to };
+    ui.notice = fmt(C.transferDone, { amount, nation: nation(others.find(p => p.idx === to).nation) });
+  } catch (e) {
+    ui.error = e.message; ui.transfer = { to, amount: f.elements.amount.value, subject };
+    ui.data = await api(`/api/p/${ui.key}`).catch(() => ui.data); // z. B. neuer Tag oder abgebrochen
+  }
+  // Inzwischen neuer Tag: Entwurf vom Server übernehmen, sonst landete der gestrige Zug im neuen Tag
+  if (ui.data.day !== day) { ui.draft = { ...(ui.data.myMove?.move ?? { vote: null, cardId: null }) }; newDay(); }
+  render();
+}
 
 /** Interaktionskarte gewählt, aber noch kein Ziel: der Zug ist noch nicht speicherbar. */
 function awaitingTarget(d, draft) {

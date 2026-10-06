@@ -1,7 +1,8 @@
-// Wer wann benachrichtigt wird. Inhalte ohne Geheimnisse: nur Tag, Uhrzeit, Spielende, Erinnerung.
+// Wer wann benachrichtigt wird. Inhalte ohne Geheimnisse: nur Tag, Uhrzeit, Spielende, Erinnerung –
+// und eine Überweisung nur an den, der sie bekommt.
 import { CONFIG } from "../config.ts";
 import { clockTime } from "../engine/index.ts";
-import type { GameState } from "../engine/index.ts";
+import type { GameState, Transfer } from "../engine/index.ts";
 import { T, fmt } from "../i18n/index.ts";
 import { loadVapidKeys, sendPush } from "../integrations/push/send.ts";
 import type { PushMessage, Subscription } from "../integrations/push/send.ts";
@@ -25,6 +26,12 @@ export function notifyNewEdition(gameId: string, s: GameState) {
   const body = s.over ? fmt(T.push.gameOver, { ending: T.endings[s.ending!] })
     : fmt(T.push.newEdition, { day: s.history.at(-1)!.day, clock: clockTime(s.tracks) });
   return deliver(gameId, () => true, body);
+}
+
+/** Überweisung: nur der Empfänger, mit Absender, Betrag und Betreff. */
+export function notifyTransfer(gameId: string, t: Transfer, s: GameState) {
+  const vars = { nation: T.nations[s.players[t.from].nation].name, amount: t.amount, subject: t.subject };
+  return deliver(gameId, idx => idx === t.to, fmt(t.subject ? T.push.transferSubject : T.push.transfer, vars));
 }
 
 /** Erinnerung: nur wer noch nicht festgelegt hat. */

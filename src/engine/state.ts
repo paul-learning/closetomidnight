@@ -2,6 +2,7 @@
 import { BALANCE } from "../rules/balance.ts";
 import { NATION_RULES } from "../rules/nations.ts";
 import { TRACKS } from "../rules/types.ts";
+import type { Transfer } from "./transfer.ts";
 import type { Card, Crisis, NationId, Offer, PowerId, Track } from "../rules/types.ts";
 
 export interface PlayerStats {
@@ -21,6 +22,7 @@ export interface Player {
   exposed: boolean;
   vetoUsed: boolean;
   stats: PlayerStats;
+  councilDebt?: { day: number; vp: number }; // geheim: Ratskosten nicht bezahlbar, dafür Siegpunkte verloren
 }
 
 /** Öffentlicher Tagesbericht. Enthält keine Geheimnisse (Angebote ohne Käufer). */
@@ -33,6 +35,7 @@ export interface DayReport {
   vetoedBy: NationId | null;
   cards: { nation: NationId; card: string; target?: NationId; stolen?: number; blocked?: boolean }[]; // stolen: tatsächlich genommener Einfluss; blocked: verpufft (Blockade)
   offersTaken: PowerId[];
+  transferred?: number; // Summe der Überweisungen an diesem Tag – öffentlich nur der Betrag, nicht wer an wen
   accusation: { target: NationId; correct: boolean } | null;
   tracksBefore: Record<Track, number>;
   tracksAfter: Record<Track, number>;
@@ -48,6 +51,7 @@ export interface GameState {
   nextCrisis: Crisis;
   offers: { to: number; offer: DealtOffer }[]; // geheim: wer welches Angebot hat
   deck: Card[];
+  transfers?: Transfer[]; // geheim: wer wem was überwiesen hat (fehlt in alten Spielständen)
   crisisDeck: Crisis[];
   accusationUsed: boolean;
   over: boolean;
