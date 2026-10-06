@@ -1,4 +1,5 @@
 // Auftrag an die KI: die Fakten des Tages und der bisherigen Tage, nichts Geheimes.
+import { clockMoves } from "./summary.ts";
 import { clockTime } from "../engine/index.ts";
 import type { DayReport, GameState } from "../engine/index.ts";
 import { T, fmt } from "../i18n/index.ts";
@@ -24,6 +25,7 @@ export function prompt(s: GameState, r: DayReport): string {
     fmt(Q.transfers, { text: r.transferred ? fmt(Q.transferredSum, { n: r.transferred }) : Q.none }),
     fmt(Q.accusation, { text: r.accusation ? fmt(r.accusation.correct ? Q.accusedRight : Q.accusedWrong, { nation: nation(r.accusation.target) }) : Q.none }),
     fmt(Q.clock, { before: clockTime(r.tracksBefore), after: time(s, r), ...r.tracksAfter }),
+    ...(r.clock ? [clockMoves(r.clock)] : []),
     s.over ? fmt(Q.final, { ending: T.endings[s.ending!], winners: nations(s.winners), hero: nations(s.awards?.hero), arsonist: nations(s.awards?.arsonist) })
       : fmt(Q.tomorrow, { crisis: crisisName(s.crisis.id) }),
     "", Q.earlier, earlier.join("\n") || Q.none,

@@ -8,6 +8,7 @@ export const client = {
     dayOf: "Tag {day} von {days}",
     help: "Spielregeln kurz erklärt",
     minutesLeft: "Noch {minutes} Minuten bis Mitternacht",
+    trackDanger: "{track}: noch {n} bis Mitternacht", trackDangerOne: "{track}: noch 1 bis Mitternacht",
     midnight: "Mitternacht.",
     clockLabel: "Weltuntergangsuhr: {time}",
     tabMove: "Dein Zug", tabResult: "Ergebnis", tabPaper: "Zeitung", tabAlliance: "Allianz",
@@ -99,6 +100,7 @@ export const client = {
     awardHero: "Held der Vernunft", awardArsonist: "Brandstifter",
     intro: [
       ["Fünf vor Zwölf", "Die Welt rast auf Mitternacht zu. Ihr vier seid die Einzigen, die sie aufhalten können. Schlägt die Uhr zwölf, verlieren alle. Überlebt die Welt sieben Tage, gewinnt, wer die meisten Siegpunkte hat."],
+      ["Die Uhr", "Die Uhr zählt drei Balken zusammen: Krieg, Autokratie und Kollaps. Jeder Punkt auf einem Balken sind 5 Minuten. Erreichen alle drei zusammen {total} Punkte, schlägt es zwölf. Und: Ist ein einzelner Balken voll ({max}), ist sofort Mitternacht, egal was die Uhr zeigt. Krisen, schmutzige Karten und Angebote der Großmächte treiben die Balken hoch, saubere Karten drehen sie zurück, ein Ratsbeschluss dämpft die Krise. Die Zeitung meldet jeden Tag, was die Uhr bewegt hat."],
       ["Einfluss und Siegpunkte", "Einfluss ist dein Geld: Du bekommst jeden Tag 3 dazu und bezahlst damit Karten und Ratsbeschlüsse. Siegpunkte entscheiden am Ende, wer gewinnt. Du bekommst sie für Karten, Angebote der Großmächte, Ratsbeschlüsse, die deine Nation begünstigen, und für deine geheimen Ziele. Die schmutzigsten Züge bringen die meisten Siegpunkte, schieben aber die Uhr vor."],
       ["Ein Tag", "Jeden Tag stimmst du über eine Krise ab, spielst eine Karte und nimmst vielleicht ein Angebot am roten Telefon an. Du kannst alles bis {hour}:00 ändern. Dann wird aufgelöst, und die Zeitung berichtet, wer was getan hat. Ab Tag {defectDay} kann ein zurückliegender Spieler heimlich überlaufen. Haltet die Augen offen."],
     ],

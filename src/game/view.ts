@@ -38,7 +38,7 @@ export function playerView(s: GameState, i: number, players: PlayerRow[], moves:
   const p = s.players[i];
   return {
     rules: {
-      days: BALANCE.days, trackMax: BALANCE.trackMax, votesNeeded: BALANCE.votesNeeded, votesNeededStrong: BALANCE.votesNeededStrong,
+      days: BALANCE.days, trackMax: BALANCE.trackMax, midnightTotal: BALANCE.midnightTotal, votesNeeded: BALANCE.votesNeeded, votesNeededStrong: BALANCE.votesNeededStrong,
       defectFromDay: BALANCE.defectFromDay, defectorBonusPk: BALANCE.defectorBonusPk,
       accuseVotesNeeded: BALANCE.accuseVotesNeeded, accuseWrongPenalty: BALANCE.accuseWrongPenalty, resolveHour: CONFIG.resolveHour,
     },

@@ -43,6 +43,10 @@ button, select, input { font: inherit; }
 .gauge .cells i.on { background: var(--red); }
 .gauge .cells i.warn { background: #e0622a; }
 .gauge b { text-align: right; font-weight: 600; }
+/* Das letzte Feld ist Mitternacht: rot umrandet */
+.gauge .cells i:last-child { box-shadow: inset 0 0 0 1px var(--red); }
+.gauge.near span:first-child, .gauge.near b { color: var(--red); font-weight: 700; }
+.danger-note { color: var(--red); font-size: .82rem; font-weight: 600; margin-top: 6px; }
 
 /* Krise und Karten: Papier auf Stahl */
 .file { background: var(--paper); color: var(--ink); border-radius: 3px; padding: 16px; box-shadow: 0 2px 0 #0003; }

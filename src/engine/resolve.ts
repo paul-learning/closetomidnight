@@ -14,7 +14,8 @@ export function resolveDay(prev: GameState, moves: Move[]): GameState {
   const s: GameState = structuredClone(prev);
   const rnd = rng(s.rngState);
   const rep: DayReport = { day: s.day, crisis: s.crisis.id, crisisTrack: s.crisis.track, votes: {}, passed: null, vetoedBy: null, cards: [],
-    offersTaken: [], accusation: null, tracksBefore: { ...s.tracks }, tracksAfter: s.tracks };
+    offersTaken: [], accusation: null, tracksBefore: { ...s.tracks }, tracksAfter: s.tracks,
+    clock: { crisis: 0, cardsUp: 0, cardsDown: 0, offers: 0, accusation: 0, drift: 0 } };
 
   defections(s, moves);
   council(s, moves, rep);
@@ -22,7 +23,7 @@ export function resolveDay(prev: GameState, moves: Move[]): GameState {
   councilCosts(s, rep);
   offers(s, moves, rep);
   accusation(s, moves, rep);
-  drift(s, rnd);
+  drift(s, rnd, rep);
   rep.transferred = (s.transfers ?? []).filter(t => t.day === s.day).reduce((n, t) => n + t.amount, 0);
 
   rep.tracksAfter = { ...s.tracks };

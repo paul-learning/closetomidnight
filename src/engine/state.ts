@@ -35,6 +35,8 @@ export interface DayReport {
   vetoedBy: NationId | null;
   cards: { nation: NationId; card: string; target?: NationId; stolen?: number; blocked?: boolean }[]; // stolen: tatsächlich genommener Einfluss; blocked: verpufft (Blockade)
   offersTaken: PowerId[];
+  /** Was die Uhr an diesem Tag bewegt hat, in Punkten (1 Punkt = 5 Minuten). Fehlt in alten Spielständen. */
+  clock?: { crisis: number; cardsUp: number; cardsDown: number; offers: number; accusation: number; drift: number };
   transferred?: number; // Summe der Überweisungen an diesem Tag – öffentlich nur der Betrag, nicht wer an wen
   accusation: { target: NationId; correct: boolean } | null;
   tracksBefore: Record<Track, number>;
