@@ -28,7 +28,7 @@ export function clockPanel(d) {
   const midnight = d.over && d.ending !== "vernunft";
   return `<section class="clock">${clockSvg(d.clock, midnight)}<div>
     <div class="time ${d.minutesLeft <= 30 || midnight ? "late" : ""}">${midnight ? "00:00" : d.clock}</div>
-    <div class="left">${midnight ? T.client.midnight : fmt(T.client.minutesLeft, { minutes: d.minutesLeft })}</div>${gauges(d.tracks, d.rules.trackMax)}
+    <div class="left">${midnight ? T.client.midnight : (d.minutesLeft === 5 ? T.client.minutesLeftOne : fmt(T.client.minutesLeft, { minutes: d.minutesLeft, points: d.minutesLeft / 5 }))}</div>${gauges(d.tracks, d.rules.trackMax)}
     ${d.over ? "" : trackWarnings(d.tracks, d.rules.trackMax)}</div></section>`;
 }
 

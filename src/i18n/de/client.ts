@@ -7,7 +7,7 @@ export const client = {
     victoryPoints: "Siegpunkte",
     dayOf: "Tag {day} von {days}",
     help: "Spielregeln kurz erklärt",
-    minutesLeft: "Noch {minutes} Minuten bis Mitternacht",
+    minutesLeft: "Noch {minutes} Minuten ({points} Punkte) bis Mitternacht", minutesLeftOne: "Noch 5 Minuten (1 Punkt) bis Mitternacht",
     trackDanger: "{track}: noch {n} Punkte bis zum vollen Balken (Mitternacht)", trackDangerOne: "{track}: noch 1 Punkt bis zum vollen Balken (Mitternacht)",
     midnight: "Mitternacht.",
     clockLabel: "Weltuntergangsuhr: {time}",
