@@ -16,8 +16,11 @@ export function clockSvg(time, midnight) {
     <circle cx="74" cy="74" r="4" fill="var(--amber)"/></svg>`;
 }
 
+/** Ab so vielen Punkten vor dem Ende wird ein Balken als Gefahr markiert. */
+const DANGER = 2;
+
 export function gauges(tracks, max) {
-  return Object.keys(T.tracks).map(t => `<div class="gauge"><span>${T.tracks[t]}</span><span class="cells">${
+  return Object.keys(T.tracks).map(t => `<div class="gauge ${max - tracks[t] <= DANGER ? "near" : ""}"><span>${T.tracks[t]}</span><span class="cells">${
     Array.from({ length: max }, (_, i) => `<i class="${i < tracks[t] ? (i >= 7 ? "on" : "warn") : ""}"></i>`).join("")}</span><b>${tracks[t]}</b></div>`).join("");
 }
 
@@ -25,5 +28,13 @@ export function clockPanel(d) {
   const midnight = d.over && d.ending !== "vernunft";
   return `<section class="clock">${clockSvg(d.clock, midnight)}<div>
     <div class="time ${d.minutesLeft <= 30 || midnight ? "late" : ""}">${midnight ? "00:00" : d.clock}</div>
-    <div class="left">${midnight ? T.client.midnight : fmt(T.client.minutesLeft, { minutes: d.minutesLeft })}</div>${gauges(d.tracks, d.rules.trackMax)}</div></section>`;
+    <div class="left">${midnight ? T.client.midnight : (d.minutesLeft === 5 ? T.client.minutesLeftOne : fmt(T.client.minutesLeft, { minutes: d.minutesLeft, points: d.minutesLeft / 5 }))}</div>${gauges(d.tracks, d.rules.trackMax)}
+    ${d.over ? "" : trackWarnings(d.tracks, d.rules.trackMax)}</div></section>`;
+}
+
+/** Ein voller Balken am Tagesende ist Mitternacht – deshalb eigens warnen, wenn einer kurz davor steht. */
+function trackWarnings(tracks, max) {
+  const lines = Object.keys(T.tracks).filter(t => max - tracks[t] <= DANGER && tracks[t] < max)
+    .map(t => { const n = max - tracks[t]; return fmt(n === 1 ? T.client.trackDangerOne : T.client.trackDanger, { track: T.tracks[t], n }); });
+  return lines.length ? `<div class="danger-note">${lines.join("<br>")}</div>` : "";
 }

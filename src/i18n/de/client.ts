@@ -7,7 +7,8 @@ export const client = {
     victoryPoints: "Siegpunkte",
     dayOf: "Tag {day} von {days}",
     help: "Spielregeln kurz erklärt",
-    minutesLeft: "Noch {minutes} Minuten bis Mitternacht",
+    minutesLeft: "Noch {minutes} Minuten ({points} Punkte) bis Mitternacht", minutesLeftOne: "Noch 5 Minuten (1 Punkt) bis Mitternacht",
+    trackDanger: "{track}: noch {n} Punkte bis zum vollen Balken (Mitternacht)", trackDangerOne: "{track}: noch 1 Punkt bis zum vollen Balken (Mitternacht)",
     midnight: "Mitternacht.",
     clockLabel: "Weltuntergangsuhr: {time}",
     tabMove: "Dein Zug", tabResult: "Ergebnis", tabPaper: "Zeitung", tabAlliance: "Allianz",
@@ -99,6 +100,7 @@ export const client = {
     awardHero: "Held der Vernunft", awardArsonist: "Brandstifter",
     intro: [
       ["Fünf vor Zwölf", "Die Welt rast auf Mitternacht zu. Ihr vier seid die Einzigen, die sie aufhalten können. Schlägt die Uhr zwölf, verlieren alle. Überlebt die Welt sieben Tage, gewinnt, wer die meisten Siegpunkte hat."],
+      ["Die Uhr", "Die Uhr zählt drei Balken zusammen: {krieg}, {autokratie} und {kollaps}. Jeder Punkt auf einem Balken sind 5 Minuten. Erreichen alle drei zusammen am Ende eines Tages {total} Punkte, schlägt es zwölf. Und: Ist am Ende eines Tages ein einzelner Balken voll ({max}), ist ebenfalls Mitternacht, egal was die Uhr zeigt. Krisen, schmutzige Karten und Angebote der Großmächte treiben die Balken hoch. Saubere Karten drehen sie zurück, ein Ratsbeschluss dämpft die Krise, und ein enttarnter Überläufer bringt 10 Minuten zurück. Die Zeitung meldet jeden Tag, was die Uhr bewegt hat."],
       ["Einfluss und Siegpunkte", "Einfluss ist dein Geld: Du bekommst jeden Tag 3 dazu und bezahlst damit Karten und Ratsbeschlüsse. Siegpunkte entscheiden am Ende, wer gewinnt. Du bekommst sie für Karten, Angebote der Großmächte, Ratsbeschlüsse, die deine Nation begünstigen, und für deine geheimen Ziele. Die schmutzigsten Züge bringen die meisten Siegpunkte, schieben aber die Uhr vor."],
       ["Ein Tag", "Jeden Tag stimmst du über eine Krise ab, spielst eine Karte und nimmst vielleicht ein Angebot am roten Telefon an. Du kannst alles bis {hour}:00 ändern. Dann wird aufgelöst, und die Zeitung berichtet, wer was getan hat. Ab Tag {defectDay} kann ein zurückliegender Spieler heimlich überlaufen. Haltet die Augen offen."],
     ],

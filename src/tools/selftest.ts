@@ -312,3 +312,23 @@ test("Ratskosten nicht bezahlbar: Siegpunkte weg, nur der Betroffene erfährt es
   const rows = [0, 1, 2, 3].map(j => ({ name: `P${j}` })) as any;
   assert.ok(!("councilDebt" in playerView(next, 1, rows, [null, null, null, null], []).players[0]));
 });
+
+test("Uhr: der Tagesbericht erklärt jede Bewegung, Summe passt, Zeitung nennt sie", async () => {
+  const { total } = await import("../engine/index.ts");
+  const { clockMoves } = await import("../newspaper/summary.ts");
+  for (let seed = 1; seed <= 300; seed++) {
+    let s = newGame(seed);
+    while (!s.over) {
+      const before = total(s.tracks);
+      s = resolveDay(s, s.players.map((_, i) => botMove(s, i, (["kooperativ", "egoist", "taktiker"] as const)[(seed + i) % 3], () => ((seed * 7 + i) % 10) / 10)));
+      const c = s.history.at(-1)!.clock!;
+      assert.equal(c.crisis + c.cardsUp + c.cardsDown + c.offers + c.accusation + c.drift, total(s.history.at(-1)!.tracksAfter) - before, `Seed ${seed}, Tag ${s.history.at(-1)!.day}`);
+      assert.ok(c.cardsUp >= 0 && c.cardsDown <= 0 && c.crisis >= 0 && c.offers >= 0 && c.accusation <= 0);
+    }
+  }
+  assert.equal(clockMoves({ crisis: 2, cardsUp: 3, cardsDown: -1, offers: 1, accusation: 0, drift: 0 }),
+    "Was die Uhr bewegt hat: Krise +2, Karten +3 / −1, Rotes Telefon +1 – zusammen +5 (25 Minuten).");
+  assert.equal(clockMoves({ crisis: 0, cardsUp: 0, cardsDown: -2, offers: 0, accusation: 0, drift: 0 }),
+    "Was die Uhr bewegt hat: Karten −2 – zusammen −2 (10 Minuten).");
+  assert.equal(clockMoves({ crisis: 0, cardsUp: 0, cardsDown: 0, offers: 0, accusation: 0, drift: 0 }), "Die Uhr hat sich heute nicht bewegt.");
+});

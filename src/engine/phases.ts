@@ -6,7 +6,12 @@ import type { Response, Track } from "../rules/types.ts";
 import { canDefect, canVeto, cardCost, topTrack } from "./state.ts";
 import type { DayReport, GameState, Move, Player } from "./state.ts";
 
-export const bump = (s: GameState, t: Track, d: number) => { s.tracks[t] = Math.max(0, Math.min(BALANCE.trackMax, s.tracks[t] + d)); };
+/** Verschiebt einen Track (begrenzt auf 0…trackMax) und gibt die tatsächliche Änderung zurück. */
+export const bump = (s: GameState, t: Track, d: number) => {
+  const before = s.tracks[t];
+  s.tracks[t] = Math.max(0, Math.min(BALANCE.trackMax, before + d));
+  return s.tracks[t] - before;
+};
 /** Zahlt in Einfluss; was fehlt, kostet Siegpunkte. Gibt die verlorenen Siegpunkte zurück. */
 const pay = (p: Player, amount: number) => { const paid = Math.min(p.pk, amount); p.pk -= paid; p.vp -= amount - paid; return amount - paid; };
 
@@ -38,7 +43,7 @@ export function council(s: GameState, moves: Move[], rep: DayReport) {
     moves.forEach((m, i) => { if (m.vote === p0.id) { s.players[i].stats.majorityVotes++; s.players[i].stats.saved += p0.reduce / 2; } });
     rep.passed = p0.id;
   }
-  bump(s, s.crisis.track, Math.max(0, hit));
+  rep.clock!.crisis = bump(s, s.crisis.track, Math.max(0, hit));
 }
 
 /** 2. Nationale Aktionen: jede Nation spielt höchstens eine Karte.
@@ -67,7 +72,8 @@ export function cards(s: GameState, moves: Move[], rep: DayReport) {
     p.vp += c.vp ?? 0; p.pk += c.pk ?? 0;
     for (const t of TRACKS) {
       const d = c.tracks?.[t]; if (!d) continue;
-      bump(s, t, d); if (d < 0) p.stats.saved -= d; else p.stats.caused += d;
+      const moved = bump(s, t, d); if (moved > 0) rep.clock!.cardsUp += moved; else rep.clock!.cardsDown += moved;
+      if (d < 0) p.stats.saved -= d; else p.stats.caused += d;
     }
     if (c.kind === "schmutzig") { p.stats.dirtyPlayed++; if (s.day >= BALANCE.defectFromDay) p.stats.lateDirty++; }
     if (c.kind === "sauber") p.stats.cleanPlayed++;
@@ -99,7 +105,7 @@ export function offers(s: GameState, moves: Move[], rep: DayReport) {
   for (const { to, offer } of s.offers) {
     if (!moves[to]?.acceptOffer) continue;
     const p = s.players[to];
-    p.vp += offer.vp; p.pk += offer.pk; p.stats.offersAccepted++; p.stats.caused += offer.doom; bump(s, offer.track, offer.doom);
+    p.vp += offer.vp; p.pk += offer.pk; p.stats.offersAccepted++; p.stats.caused += offer.doom; rep.clock!.offers += bump(s, offer.track, offer.doom);
     rep.offersTaken.push(offer.power);
   }
 }
@@ -112,7 +118,7 @@ export function accusation(s: GameState, moves: Move[], rep: DayReport) {
     if (accusers < BALANCE.accuseVotesNeeded) continue;
     s.accusationUsed = true;
     const correct = s.players[t].defector;
-    if (correct) { s.players[t].exposed = true; bump(s, topTrack(s), -BALANCE.accuseRightClockBack); }
+    if (correct) { s.players[t].exposed = true; rep.clock!.accusation = bump(s, topTrack(s), -BALANCE.accuseRightClockBack); }
     else moves.forEach((m, i) => { if (m.accuse === t && i !== t) s.players[i].vp -= BALANCE.accuseWrongPenalty; });
     rep.accusation = { target: s.players[t].nation, correct };
     return;
@@ -120,6 +126,6 @@ export function accusation(s: GameState, moves: Move[], rep: DayReport) {
 }
 
 /** 5. Großmächte treiben die Uhr zufällig (im Modus "drei" abgeschaltet). */
-export function drift(s: GameState, rnd: () => number) {
-  for (let k = 0; k < BALANCE.strongmanDriftPerDay; k++) bump(s, TRACKS[Math.floor(rnd() * 3)], 1);
+export function drift(s: GameState, rnd: () => number, rep: DayReport) {
+  for (let k = 0; k < BALANCE.strongmanDriftPerDay; k++) rep.clock!.drift += bump(s, TRACKS[Math.floor(rnd() * 3)], 1);
 }

@@ -3,7 +3,7 @@
 export const BALANCE = {
   days: 7,
   trackStart: 3,
-  trackMax: 10, // erreicht ein Track diesen Wert, schlägt es sofort Mitternacht
+  trackMax: 10, // steht ein Track am Tagesende auf diesem Wert, schlägt es Mitternacht
   midnightTotal: 24, // Summe aller Tracks, bei der es Mitternacht schlägt
   startPk: 4,
   pkPerDay: 3,
