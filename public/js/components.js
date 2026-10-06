@@ -29,7 +29,7 @@ export function clockPanel(d) {
   return `<section class="clock">${clockSvg(d.clock, midnight)}<div>
     <div class="time ${d.minutesLeft <= 30 || midnight ? "late" : ""}">${midnight ? "00:00" : d.clock}</div>
     <div class="left">${midnight ? T.client.midnight : fmt(T.client.minutesLeft, { minutes: d.minutesLeft })}</div>${gauges(d.tracks, d.rules.trackMax)}
-    ${midnight ? "" : trackWarnings(d.tracks, d.rules.trackMax)}</div></section>`;
+    ${d.over ? "" : trackWarnings(d.tracks, d.rules.trackMax)}</div></section>`;
 }
 
 /** Ein voller Balken ist sofort Mitternacht – deshalb eigens warnen, wenn einer kurz davor steht. */

@@ -10,7 +10,7 @@ const markIntro = () => { try { localStorage.setItem("fvz-intro", "1"); } catch 
 export function renderIntro(page, rules, onPage, onDone) {
   const pages = C.intro, [title, text] = pages[page], last = page === pages.length - 1;
   $("#app").innerHTML = `<section class="intro"><div class="stencil">${title}</div>
-    <p>${fmt(text, { hour: rules.resolveHour, defectDay: rules.defectFromDay, total: rules.midnightTotal, max: rules.trackMax })}</p>
+    <p>${fmt(text, { hour: rules.resolveHour, defectDay: rules.defectFromDay, total: rules.midnightTotal, max: rules.trackMax, ...T.tracks })}</p>
     <div class="dots">${pages.map((_, k) => `<i class="${k === page ? "on" : ""}"></i>`).join("")}</div></section>`;
   const el = $("#bar"); el.hidden = false;
   el.innerHTML = `<div class="inner"><button class="btn ghost" id="skip">${last ? C.back : C.introSkip}</button><button class="btn" id="on">${last ? C.introGo : C.next}</button></div>`;
